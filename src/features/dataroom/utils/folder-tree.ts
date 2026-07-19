@@ -3,8 +3,8 @@ import type {
   DataRoomItem,
   FolderEntity,
   ItemId,
-} from "@/features/dataroom/model/types";
-import { ROOT_FOLDER_NAME } from "@/features/dataroom/model/constants";
+} from "../model/types.js";
+import { ROOT_FOLDER_NAME } from "../model/constants.js";
 
 export function getChildren(
   items: DataRoomItem[],

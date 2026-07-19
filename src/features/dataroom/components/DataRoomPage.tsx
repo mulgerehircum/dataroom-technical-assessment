@@ -9,6 +9,7 @@ import { CreateFolderDialog } from "@/features/dataroom/dialogs/CreateFolderDial
 import { RenameItemDialog } from "@/features/dataroom/dialogs/RenameItemDialog";
 import { DeleteItemDialog } from "@/features/dataroom/dialogs/DeleteItemDialog";
 import { useFolderContents } from "@/features/dataroom/hooks/useFolderContents";
+import { useSearch } from "@/features/dataroom/hooks/useSearch";
 import type {
   DataRoomItem,
   FileEntity,
@@ -20,6 +21,10 @@ export function DataRoomPage() {
   const folderId: ItemId | null = params.folderId ?? null;
   const { data: items = [] } = useFolderContents(folderId);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const { data: searchResults = [] } = useSearch(searchQuery);
+  const isSearching = searchQuery.trim().length > 0;
+
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<DataRoomItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DataRoomItem | null>(null);
@@ -27,13 +32,17 @@ export function DataRoomPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <DataRoomHeader onCreateFolder={() => setIsCreateFolderOpen(true)} />
-      <Breadcrumbs currentFolderId={folderId} />
+      <DataRoomHeader
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onCreateFolder={() => setIsCreateFolderOpen(true)}
+      />
+      {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-        <UploadDropzone folderId={folderId} />
+        {!isSearching && <UploadDropzone folderId={folderId} />}
         <ContentsGrid
-          items={items}
+          items={isSearching ? searchResults : items}
           onRename={setRenameTarget}
           onDelete={setDeleteTarget}
           onPreviewFile={setPreviewFile}

@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { Breadcrumbs } from "@/features/dataroom/components/Breadcrumbs";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import { renderWithProviders, resetDataRoomDB } from "./test-utils";
+import { renderWithProviders, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
-  await resetDataRoomDB();
+  await resetFakeRepository();
 });
 
 describe("Breadcrumbs", () => {

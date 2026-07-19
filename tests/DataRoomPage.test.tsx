@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { renderDataRoomApp, resetDataRoomDB } from "./test-utils";
+import { renderDataRoomApp, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
-  await resetDataRoomDB();
+  await resetFakeRepository();
 });
 
 function getFileInput(container: HTMLElement): HTMLInputElement {

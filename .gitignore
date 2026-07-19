@@ -36,3 +36,12 @@ Thumbs.db
 # assessment working files, not part of the deliverable
 test-task.md
 CLAUDE.md
+
+.vercel
+.env*
+
+# vendor-installed agent reference skills (side effect of Vercel Marketplace
+# integration installers), useful locally, not part of the app
+.agents
+.claude/skills
+skills-lock.json

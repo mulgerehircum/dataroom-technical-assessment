@@ -4,10 +4,10 @@ import { fireEvent, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
 import { UploadDropzone } from "@/features/dataroom/components/UploadDropzone";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import { renderWithProviders, resetDataRoomDB } from "./test-utils";
+import { renderWithProviders, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
-  await resetDataRoomDB();
+  await resetFakeRepository();
 });
 
 function getFileInput(container: HTMLElement): HTMLInputElement {

@@ -4,7 +4,7 @@ import type {
   FolderEntity,
   ItemId,
 } from "@/features/dataroom/model/types";
-import { indexedDBRepository } from "@/features/dataroom/storage/indexeddb.repository";
+import { apiRepository } from "@/features/dataroom/storage/api.repository";
 
 /** Storage-agnostic contract the hooks layer depends on. */
 export interface DataRoomRepository {
@@ -17,7 +17,8 @@ export interface DataRoomRepository {
   createFile(file: File, parentId: ItemId | null): Promise<FileEntity>;
   renameFile(id: ItemId, name: string): Promise<void>;
   deleteFile(id: ItemId): Promise<void>;
+  search(query: string): Promise<DataRoomItem[]>;
 }
 
 /** Swap implementations here (e.g. an in-memory fake for tests) without touching call sites. */
-export const dataRoomRepository: DataRoomRepository = indexedDBRepository;
+export const dataRoomRepository: DataRoomRepository = apiRepository;

@@ -2,7 +2,7 @@ import {
   ALLOWED_FILE_MIME_TYPES,
   MAX_FILE_SIZE_BYTES,
   MAX_ITEM_NAME_LENGTH,
-} from "@/features/dataroom/model/constants";
+} from "./constants.js";
 
 export type ValidationResult =
   | { ok: true }
@@ -29,7 +29,15 @@ export function validateItemName(rawName: string): ValidationResult {
   return { ok: true };
 }
 
-export function validateFileUpload(file: File): ValidationResult {
+/** Duck-typed so this validates equally against a browser File (client) or a plain
+ * { name, type, size } object (server, re-validating after a client-side blob upload). */
+interface FileLike {
+  name: string;
+  type: string;
+  size: number;
+}
+
+export function validateFileUpload(file: FileLike): ValidationResult {
   if (!ALLOWED_FILE_MIME_TYPES.includes(file.type as never)) {
     return { ok: false, message: "Only PDF files are supported." };
   }

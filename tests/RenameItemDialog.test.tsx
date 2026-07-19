@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { RenameItemDialog } from "@/features/dataroom/dialogs/RenameItemDialog";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import { renderWithProviders, resetDataRoomDB } from "./test-utils";
+import { renderWithProviders, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
-  await resetDataRoomDB();
+  await resetFakeRepository();
 });
 
 describe("RenameItemDialog", () => {

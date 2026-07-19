@@ -22,7 +22,8 @@ export interface FileEntity {
   parentId: ItemId | null;
   mimeType: SupportedFileMimeType;
   size: number;
-  blob: Blob;
+  /** Public Vercel Blob URL — usable directly as an <iframe>/<a> src. */
+  blobUrl: string;
   createdAt: number;
   updatedAt: number;
 }

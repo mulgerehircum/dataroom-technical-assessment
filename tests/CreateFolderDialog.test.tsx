@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CreateFolderDialog } from "@/features/dataroom/dialogs/CreateFolderDialog";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import { renderWithProviders, resetDataRoomDB } from "./test-utils";
+import { renderWithProviders, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
-  await resetDataRoomDB();
+  await resetFakeRepository();
 });
 
 describe("CreateFolderDialog", () => {

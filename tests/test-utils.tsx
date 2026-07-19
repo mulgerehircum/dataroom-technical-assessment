@@ -2,15 +2,9 @@ import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render } from "@testing-library/react";
-import { FILES_STORE, FOLDERS_STORE } from "@/features/dataroom/model/constants";
-import { getDataRoomDB } from "@/features/dataroom/storage/db";
 import { DataRoomPage } from "@/features/dataroom/components/DataRoomPage";
 
-export async function resetDataRoomDB(): Promise<void> {
-  const db = await getDataRoomDB();
-  await db.clear(FOLDERS_STORE);
-  await db.clear(FILES_STORE);
-}
+export { resetFakeRepository } from "./fakes/fake-dataroom.repository";
 
 function createTestQueryClient() {
   return new QueryClient({
