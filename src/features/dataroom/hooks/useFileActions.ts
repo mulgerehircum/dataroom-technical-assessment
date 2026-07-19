@@ -5,18 +5,18 @@ import {
   dataRoomRepository,
   type FileConflictPolicy,
 } from "@/features/dataroom/storage/dataroom.repository";
-import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
+import {
+  folderViewQueryKey,
+  type FolderViewData,
+} from "@/features/dataroom/hooks/folder-view";
+import { setFolderViewItems } from "@/features/dataroom/hooks/folder-view-cache";
 import {
   optimisticRename,
   restoreRenameSnapshot,
 } from "@/features/dataroom/hooks/optimistic-rename";
-import type {
-  DataRoomItem,
-  FileEntity,
-  ItemId,
-} from "@/features/dataroom/model/types";
+import type { FileEntity, ItemId } from "@/features/dataroom/model/types";
 
-type FolderContentsSnapshot = [readonly unknown[], DataRoomItem[] | undefined][];
+type FolderViewSnapshot = [readonly unknown[], FolderViewData | undefined][];
 
 export function useFileActions() {
   const queryClient = useQueryClient();
@@ -36,8 +36,7 @@ export function useFileActions() {
       onConflict?: FileConflictPolicy;
     }) => dataRoomRepository.createFile(file, parentId, { onConflict }),
     onMutate: async ({ file, parentId, onConflict }) => {
-      const queryKey = folderContentsQueryKey(parentId);
-      await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey: folderViewQueryKey(parentId) });
 
       const optimisticId = `pending-${crypto.randomUUID()}`;
       const optimisticFile: FileEntity = {
@@ -54,28 +53,32 @@ export function useFileActions() {
         isUploading: true,
       };
 
-      queryClient.setQueryData<DataRoomItem[]>(queryKey, (current = []) => {
+      setFolderViewItems(queryClient, parentId, (current) => {
         const withoutReplaced =
           onConflict === "replace"
             ? current.filter(
                 (item) =>
-                  !(item.type === "file" && item.name === file.name && !item.isUploading),
+                  !(
+                    item.type === "file" &&
+                    item.name === file.name &&
+                    !item.isUploading
+                  ),
               )
             : current;
         return [...withoutReplaced, optimisticFile];
       });
 
-      return { queryKey, optimisticId };
+      return { parentId, optimisticId };
     },
     onError: (_error, _variables, context) => {
       if (!context) return;
-      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) =>
+      setFolderViewItems(queryClient, context.parentId, (current) =>
         current.filter((item) => item.id !== context.optimisticId),
       );
     },
     onSuccess: (created, _variables, context) => {
       if (!context) return;
-      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) => {
+      setFolderViewItems(queryClient, context.parentId, (current) => {
         const withoutOptimistic = current.filter(
           (item) => item.id !== context.optimisticId,
         );
@@ -103,17 +106,17 @@ export function useFileActions() {
   const deleteFile = useMutation({
     mutationFn: (id: ItemId) => dataRoomRepository.deleteFile(id),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["dataroom", "folder-contents"] });
-      const previous: FolderContentsSnapshot = queryClient.getQueriesData<
-        DataRoomItem[]
-      >({ queryKey: ["dataroom", "folder-contents"] });
+      await queryClient.cancelQueries({ queryKey: ["dataroom", "folder-view"] });
+      const previous: FolderViewSnapshot = queryClient.getQueriesData<FolderViewData>({
+        queryKey: ["dataroom", "folder-view"],
+      });
 
       for (const [queryKey, data] of previous) {
-        if (!data?.some((item) => item.id === id)) continue;
-        queryClient.setQueryData<DataRoomItem[]>(
-          queryKey,
-          data.filter((item) => item.id !== id),
-        );
+        if (!data?.items.some((item) => item.id === id)) continue;
+        queryClient.setQueryData<FolderViewData>(queryKey, {
+          ...data,
+          items: data.items.filter((item) => item.id !== id),
+        });
       }
 
       return { previous };
