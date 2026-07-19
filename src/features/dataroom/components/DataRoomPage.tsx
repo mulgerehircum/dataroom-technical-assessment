@@ -32,8 +32,25 @@ export function DataRoomPage() {
     isFetched: breadcrumbsFetched,
     isPlaceholderData: breadcrumbsPlaceholder,
   } = useBreadcrumbs(folderId);
-  const { data: items = [], isPending: folderPending } =
-    useFolderContents(folderId);
+
+  // Missing / deleted folder: chain is empty after a real fetch (ignore CLS
+  // placeholder from the previous folder) — send the user home.
+  const folderMissing =
+    folderId !== null &&
+    breadcrumbsFetched &&
+    !breadcrumbsPlaceholder &&
+    (breadcrumbsData?.ancestors.length ?? 0) === 0;
+  // Wait for breadcrumbs before /api/items so a dead folder doesn't also 404
+  // (and retry) on the contents endpoint.
+  const folderReady =
+    folderId === null ||
+    (!breadcrumbsPlaceholder &&
+      (breadcrumbsData?.ancestors.length ?? 0) > 0);
+
+  const { data: items = [], isPending: folderPending } = useFolderContents(
+    folderId,
+    { enabled: folderReady },
+  );
   const { deleteFolder, renameFolder } = useFolderActions();
   const { deleteFile, renameFile } = useFileActions();
 
@@ -45,20 +62,17 @@ export function DataRoomPage() {
   );
   const isSearching = searchQuery.trim().length > 0;
   // First load / new folder / new search only — background polls keep showing data.
-  const showSkeleton = isSearching ? searchPending : folderPending;
+  const showSkeleton = isSearching
+    ? searchPending
+    : folderId !== null && !folderReady
+      ? !folderMissing
+      : folderPending;
 
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<DataRoomItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DataRoomItem | null>(null);
   const [previewFile, setPreviewFile] = useState<FileEntity | null>(null);
 
-  // Missing / deleted folder: chain is empty after a real fetch (ignore CLS
-  // placeholder from the previous folder) — send the user home.
-  const folderMissing =
-    folderId !== null &&
-    breadcrumbsFetched &&
-    !breadcrumbsPlaceholder &&
-    (breadcrumbsData?.ancestors.length ?? 0) === 0;
   useEffect(() => {
     if (!folderMissing) return;
     toast.error("This folder no longer exists.");

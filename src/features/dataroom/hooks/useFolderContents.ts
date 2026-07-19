@@ -27,9 +27,13 @@ function withPendingUploads(
   return [...serverItems, ...pending.filter((item) => !ids.has(item.id))];
 }
 
-export function useFolderContents(folderId: ItemId | null) {
+export function useFolderContents(
+  folderId: ItemId | null,
+  options?: { enabled?: boolean },
+) {
   const queryClient = useQueryClient();
   const queryKey = folderContentsQueryKey(folderId);
+  const enabled = options?.enabled ?? true;
 
   return useQuery({
     queryKey,
@@ -40,6 +44,12 @@ export function useFolderContents(folderId: ItemId | null) {
       const previous = queryClient.getQueryData<DataRoomItem[]>(queryKey);
       return withPendingUploads(items, previous);
     },
-    refetchInterval: FOLDER_CONTENTS_POLL_MS,
+    enabled,
+    // Missing parents 404 — don't hammer /api/items with the default 3 retries.
+    retry: false,
+    refetchInterval: enabled
+      ? (query) =>
+          query.state.status === "success" ? FOLDER_CONTENTS_POLL_MS : false
+      : false,
   });
 }

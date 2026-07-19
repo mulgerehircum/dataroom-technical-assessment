@@ -68,13 +68,18 @@ describe("DataRoomPage", () => {
 
   it("redirects home when the folder id does not exist", async () => {
     const errorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+    const listSpy = vi.spyOn(dataRoomRepository, "listChildren");
     renderDataRoomApp("/folder/missing-folder-id");
 
     expect(
       await screen.findByRole("button", { name: "New folder" }),
     ).toBeInTheDocument();
     expect(errorSpy).toHaveBeenCalledWith("This folder no longer exists.");
+    expect(
+      listSpy.mock.calls.every(([parentId]) => parentId !== "missing-folder-id"),
+    ).toBe(true);
     errorSpy.mockRestore();
+    listSpy.mockRestore();
   });
 
   it("uploads a pdf and opens it in the preview dialog", async () => {
