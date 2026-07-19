@@ -98,6 +98,7 @@ describe("DataRoomHeader upload", () => {
         folderId={null}
         searchQuery=""
         onSearchQueryChange={() => {}}
+        onRenameFolder={() => {}}
       />,
     );
 
@@ -119,6 +120,7 @@ describe("DataRoomHeader upload", () => {
         folderId={null}
         searchQuery=""
         onSearchQueryChange={() => {}}
+        onRenameFolder={() => {}}
       />,
     );
     const file = new File(["hi"], "notes.txt", { type: "text/plain" });
@@ -136,6 +138,7 @@ describe("DataRoomHeader upload", () => {
         folderId={null}
         searchQuery=""
         onSearchQueryChange={() => {}}
+        onRenameFolder={() => {}}
       />,
     );
     const file = pdf("huge.pdf");

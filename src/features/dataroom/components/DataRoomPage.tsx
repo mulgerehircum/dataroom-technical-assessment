@@ -36,6 +36,7 @@ export function DataRoomPage() {
         folderId={folderId}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
+        onRenameFolder={setRenameTarget}
       />
       {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
 
