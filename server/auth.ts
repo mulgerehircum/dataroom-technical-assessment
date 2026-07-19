@@ -27,19 +27,30 @@ const authorizedParties = [
   process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : undefined,
-  "http://localhost:3210",
+  "https://tailored-tech-fullstack-technical.vercel.app",
+  // Local Vite (`npm run dev`) and vercel/dev defaults
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "http://localhost:3000",
+  "http://localhost:3210",
 ].filter((party): party is string => Boolean(party));
 
 export async function requireAuth(request: Request): Promise<string> {
-  const { isAuthenticated, toAuth } = await getClerkClient().authenticateRequest(
-    request,
-    { authorizedParties },
-  );
+  const state = await getClerkClient().authenticateRequest(request, {
+    authorizedParties,
+  });
 
-  if (!isAuthenticated) throw new AuthError();
+  if (!state.isAuthenticated) {
+    const detail =
+      "reason" in state && state.reason ? String(state.reason) : "Unauthorized";
+    console.error("[auth]", detail, {
+      hasAuthorization: Boolean(request.headers.get("authorization")),
+      origin: request.headers.get("origin"),
+    });
+    throw new AuthError(detail);
+  }
 
-  const userId = toAuth().userId;
+  const userId = state.toAuth().userId;
   if (!userId) throw new AuthError();
   return userId;
 }

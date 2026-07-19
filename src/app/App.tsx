@@ -1,32 +1,40 @@
-import { useEffect } from "react";
+import { useAuth, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { RouterProvider } from "react-router-dom";
-import { SignedIn, SignedOut, SignInButton, useAuth } from "@clerk/clerk-react";
 import { AppProviders } from "@/app/providers";
 import { router } from "@/app/router";
 import { Button } from "@/components/ui/button";
 import { setTokenGetter } from "@/features/dataroom/storage/auth-token";
 
-function ClerkTokenBridge() {
-  const { getToken } = useAuth();
+function AuthenticatedApp() {
+  const { getToken, isLoaded } = useAuth();
 
-  useEffect(() => {
-    setTokenGetter(getToken);
-  }, [getToken]);
+  // Set during render (not in an effect) so folder queries that mount in the
+  // same commit always see a live getter — useEffect races TanStack Query.
+  setTokenGetter(getToken);
 
-  return null;
+  if (!isLoaded) return null;
+
+  return <RouterProvider router={router} />;
 }
 
 function SignInPrompt() {
   return (
-    <div className="flex h-svh flex-col items-center justify-center gap-4">
+    <div className="flex h-svh flex-col items-center justify-center gap-4 bg-background">
       <div className="text-center">
-        <h1 className="text-lg font-semibold">Data Room</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[12px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+          Acme Data Room
+        </p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight">
+          Sign in
+        </h1>
+        <p className="mt-2 text-[13.5px] text-muted-foreground">
           Sign in to view your documents.
         </p>
       </div>
       <SignInButton mode="modal">
-        <Button>Sign in</Button>
+        <Button className="rounded-lg px-4 font-bold tracking-[0.02em] uppercase">
+          Sign in
+        </Button>
       </SignInButton>
     </div>
   );
@@ -36,8 +44,7 @@ export function App() {
   return (
     <AppProviders>
       <SignedIn>
-        <ClerkTokenBridge />
-        <RouterProvider router={router} />
+        <AuthenticatedApp />
       </SignedIn>
       <SignedOut>
         <SignInPrompt />

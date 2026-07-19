@@ -10,11 +10,15 @@ import type {
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAuthToken();
+  if (!token) {
+    throw new Error("Not authenticated — missing Clerk session token");
+  }
+
   const res = await fetch(`/api${path}`, {
     ...init,
     headers: {
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
       ...init?.headers,
     },
   });
@@ -53,10 +57,13 @@ export const apiRepository: DataRoomRepository = {
     if (!validation.ok) throw new Error(validation.message);
 
     const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Not authenticated — missing Clerk session token");
+    }
     const blob = await upload(file.name, file, {
       access: "public",
       handleUploadUrl: "/api/files/upload-url",
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     return apiFetch<FileEntity>("/files", {

@@ -43,8 +43,8 @@ export function UploadDropzone({ folderId }: UploadDropzoneProps) {
       onDragLeave={() => setIsDragActive(false)}
       onDrop={handleDrop}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed p-6 text-sm text-muted-foreground transition-colors hover:bg-accent",
-        isDragActive && "border-primary bg-accent",
+        "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-border bg-card p-6 text-[13.5px] text-muted-foreground transition-colors hover:bg-accent",
+        isDragActive && "border-primary bg-accent text-foreground",
       )}
     >
       <UploadCloud className="size-6" />

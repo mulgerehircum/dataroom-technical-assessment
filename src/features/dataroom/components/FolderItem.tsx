@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Folder } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -20,10 +19,17 @@ export function FolderItem({ folder, onRename, onDelete }: FolderItemProps) {
       <ContextMenuTrigger>
         <Link
           to={`/folder/${folder.id}`}
-          className="flex flex-col items-center gap-2 rounded-md p-3 text-center hover:bg-accent"
+          className="flex items-center gap-3.5 rounded-[10px] border border-border bg-card px-[18px] py-[18px] transition-colors hover:bg-accent"
         >
-          <Folder className="size-10 text-muted-foreground" />
-          <span className="w-full truncate text-sm">{folder.name}</span>
+          <span
+            className="relative size-8 shrink-0 rounded-[4px_8px_4px_4px] bg-folder-icon"
+            aria-hidden
+          >
+            <span className="absolute -top-1.5 left-0 h-1.5 w-[18px] rounded-t-[3px] bg-folder-icon" />
+          </span>
+          <span className="min-w-0 truncate text-sm font-bold tracking-wide uppercase">
+            {folder.name}
+          </span>
         </Link>
       </ContextMenuTrigger>
       <ContextMenuContent>

@@ -31,7 +31,7 @@ export function DataRoomPage() {
   const [previewFile, setPreviewFile] = useState<FileEntity | null>(null);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-svh flex-col bg-background">
       <DataRoomHeader
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
