@@ -21,6 +21,9 @@ export default withHandler(async (request) => {
     onBeforeGenerateToken: async () => ({
       allowedContentTypes: [...ALLOWED_FILE_MIME_TYPES],
       maximumSizeInBytes: MAX_FILE_SIZE_BYTES,
+      // Pathname is the display filename; without a suffix, uploading
+      // "CV.pdf" in a second folder (or replacing in-place) collides.
+      addRandomSuffix: true,
     }),
   });
 
