@@ -126,12 +126,13 @@ query.
 Filename-only, case-insensitive substring match (`ILIKE`) across the whole data room (not just the
 current folder) — `GET /api/search?q=`. The header's search input replaces the folder grid with
 results while a query is active; clicking a folder result navigates into it, clicking a file result
-opens it directly.
+opens it directly. Recent searches are stored in `localStorage` (browser-local only) and shown when
+the empty search field is focused.
 
 ## Testing
 
 - **Pure logic** (`model/*`, `utils/*`): unit tests, `tests/folder-tree.test.ts`,
-  `tests/file-name.test.ts`
+  `tests/file-name.test.ts`, `tests/search-history.test.ts`
 - **Components/dialogs/pages**: Testing Library against `tests/fakes/fake-dataroom.repository.ts`,
   an in-memory stand-in for `DataRoomRepository` (swapped in via `vi.mock` in `tests/setup.ts`,
   which also mocks `@clerk/clerk-react` since components now render `<UserButton>` etc.) — no real
@@ -155,7 +156,8 @@ Known gaps, given the time-boxed nature of this pass:
 - Rename/delete are only reachable via each item's right-click context menu — no dedicated
   affordance for keyboard/touch users (files also expose an Actions dropdown; folders do not)
 - No loading/error UI beyond `sonner` toasts on mutation failure
-- Search UX is minimal (no result highlighting, no "jump to this file's location" breadcrumb)
+- Search UX is minimal (no result highlighting, no "jump to this file's location" breadcrumb);
+  recent searches are local to the browser (`localStorage`), not synced per user
 - `FilePreview` renders PDFs via a plain `<iframe src={blobUrl}>` — no fallback for browsers that
   don't render PDFs inline
 - Public blob access means a leaked/guessed file URL is viewable without auth; per-user isolation is

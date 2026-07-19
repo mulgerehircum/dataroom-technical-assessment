@@ -10,6 +10,7 @@ import { RenameItemDialog } from "@/features/dataroom/dialogs/RenameItemDialog";
 import { DeleteItemDialog } from "@/features/dataroom/dialogs/DeleteItemDialog";
 import { useFolderContents } from "@/features/dataroom/hooks/useFolderContents";
 import { useSearch } from "@/features/dataroom/hooks/useSearch";
+import { useSearchHistory } from "@/features/dataroom/hooks/useSearchHistory";
 import type {
   DataRoomItem,
   FileEntity,
@@ -22,7 +23,8 @@ export function DataRoomPage() {
   const { data: items = [] } = useFolderContents(folderId);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: searchResults = [] } = useSearch(searchQuery);
+  const searchHistory = useSearchHistory();
+  const { data: searchResults = [] } = useSearch(searchQuery, searchHistory.add);
   const isSearching = searchQuery.trim().length > 0;
 
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
@@ -37,6 +39,9 @@ export function DataRoomPage() {
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         onRenameFolder={setRenameTarget}
+        searchHistory={searchHistory.history}
+        onRemoveSearchHistory={searchHistory.remove}
+        onClearSearchHistory={searchHistory.clear}
       />
       {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
 

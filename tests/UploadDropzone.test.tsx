@@ -99,6 +99,9 @@ describe("DataRoomHeader upload", () => {
         searchQuery=""
         onSearchQueryChange={() => {}}
         onRenameFolder={() => {}}
+        searchHistory={[]}
+        onRemoveSearchHistory={() => {}}
+        onClearSearchHistory={() => {}}
       />,
     );
 
@@ -121,6 +124,9 @@ describe("DataRoomHeader upload", () => {
         searchQuery=""
         onSearchQueryChange={() => {}}
         onRenameFolder={() => {}}
+        searchHistory={[]}
+        onRemoveSearchHistory={() => {}}
+        onClearSearchHistory={() => {}}
       />,
     );
     const file = new File(["hi"], "notes.txt", { type: "text/plain" });
@@ -139,6 +145,9 @@ describe("DataRoomHeader upload", () => {
         searchQuery=""
         onSearchQueryChange={() => {}}
         onRenameFolder={() => {}}
+        searchHistory={[]}
+        onRemoveSearchHistory={() => {}}
+        onClearSearchHistory={() => {}}
       />,
     );
     const file = pdf("huge.pdf");

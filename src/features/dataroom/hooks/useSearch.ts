@@ -21,8 +21,14 @@ function useDebouncedSearchQuery(query: string, delayMs: number): string {
   return debounced;
 }
 
-export function useSearch(query: string) {
+export function useSearch(query: string, onSearchSettled?: (query: string) => void) {
   const searchQuery = useDebouncedSearchQuery(query.trim(), SEARCH_DEBOUNCE_MS);
+
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      onSearchSettled?.(searchQuery);
+    }
+  }, [searchQuery, onSearchSettled]);
 
   return useQuery({
     queryKey: ["dataroom", "search", searchQuery],
