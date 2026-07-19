@@ -9,6 +9,9 @@ import type {
 export const folderContentsQueryKey = (folderId: ItemId | null) =>
   ["dataroom", "folder-contents", folderId] as const;
 
+/** How often the folder contents query re-fetches `/api/items`. */
+const FOLDER_CONTENTS_POLL_MS = 5_000;
+
 function withPendingUploads(
   serverItems: DataRoomItem[],
   previousItems: DataRoomItem[] | undefined,
@@ -37,5 +40,6 @@ export function useFolderContents(folderId: ItemId | null) {
       const previous = queryClient.getQueryData<DataRoomItem[]>(queryKey);
       return withPendingUploads(items, previous);
     },
+    refetchInterval: FOLDER_CONTENTS_POLL_MS,
   });
 }
