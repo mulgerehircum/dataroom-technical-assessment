@@ -8,7 +8,6 @@ import {
 } from "@/features/dataroom/dialogs/UploadConflictDialog";
 import { useFileActions } from "@/features/dataroom/hooks/useFileActions";
 import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
-import type { FolderViewData } from "@/features/dataroom/hooks/folder-view";
 import { validateFileUpload } from "@/features/dataroom/model/validation";
 import type { DataRoomItem, ItemId } from "@/features/dataroom/model/types";
 import type { FileConflictPolicy } from "@/features/dataroom/storage/dataroom.repository";
@@ -126,7 +125,7 @@ export function useUploadFiles(folderId: ItemId | null) {
       }
 
       const queryKey = folderContentsQueryKey(folderId);
-      const siblings = queryClient.getQueryData<FolderViewData>(queryKey)?.items;
+      const siblings = queryClient.getQueryData<DataRoomItem[]>(queryKey);
       const conflicting = valid.filter((file) =>
         findConflictingFileName(siblings, file.name),
       );
@@ -135,7 +134,7 @@ export function useUploadFiles(folderId: ItemId | null) {
 
       for (const file of valid) {
         const hasConflict = findConflictingFileName(
-          queryClient.getQueryData<FolderViewData>(queryKey)?.items,
+          queryClient.getQueryData<DataRoomItem[]>(queryKey),
           file.name,
         );
 

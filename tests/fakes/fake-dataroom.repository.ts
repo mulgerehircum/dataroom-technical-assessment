@@ -98,22 +98,16 @@ export const fakeDataRoomRepository: DataRoomRepository = {
     return { ...folder, itemCount: itemCountFor(id) };
   },
 
-  async getFolderView(folderId) {
-    if (folderId === null) {
-      return { ancestors: [], items: await fakeDataRoomRepository.listChildren(null) };
-    }
-    const ancestors: FolderEntity[] = [];
-    let cursor: ItemId | null = folderId;
+  async listBreadcrumbChain(id) {
+    const chain: FolderEntity[] = [];
+    let cursor: ItemId | null = id;
     while (cursor !== null) {
       const folder = folders.find((candidate) => candidate.id === cursor);
-      if (!folder) return { ancestors: [], items: [] };
-      ancestors.unshift({ ...folder, itemCount: itemCountFor(folder.id) });
+      if (!folder) return [];
+      chain.unshift({ ...folder, itemCount: itemCountFor(folder.id) });
       cursor = folder.parentId;
     }
-    return {
-      ancestors,
-      items: await fakeDataRoomRepository.listChildren(folderId),
-    };
+    return chain;
   },
 
   async createFolder(name, parentId) {

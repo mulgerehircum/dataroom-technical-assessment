@@ -22,8 +22,6 @@ interface FileItemProps {
   onOpen: () => void;
   onRename: () => void;
   onDelete: () => void;
-  /** Search-only: jump to the file's parent folder. */
-  onShowInFolder?: () => void;
 }
 
 function formatModifiedDate(timestamp: number): string {
@@ -48,13 +46,7 @@ function ownerShortName(name: string): string {
   return `${parts[0][0] ?? ""}. ${parts[parts.length - 1]}`;
 }
 
-export function FileItem({
-  file,
-  onOpen,
-  onRename,
-  onDelete,
-  onShowInFolder,
-}: FileItemProps) {
+export function FileItem({ file, onOpen, onRename, onDelete }: FileItemProps) {
   const { user } = useUser();
   const isUploading = Boolean(file.isUploading);
 
@@ -133,11 +125,6 @@ export function FileItem({
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {onShowInFolder && (
-              <DropdownMenuItem onClick={onShowInFolder}>
-                Show in folder
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem onClick={onRename}>Rename</DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               Delete
@@ -154,11 +141,6 @@ export function FileItem({
     <ContextMenu>
       <ContextMenuTrigger>{row}</ContextMenuTrigger>
       <ContextMenuContent>
-        {onShowInFolder && (
-          <ContextMenuItem onClick={onShowInFolder}>
-            Show in folder
-          </ContextMenuItem>
-        )}
         <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
         <ContextMenuItem variant="destructive" onClick={onDelete}>
           Delete

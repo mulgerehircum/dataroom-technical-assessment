@@ -15,7 +15,6 @@ interface ContentsGridProps {
   onDelete: (item: DataRoomItem) => void;
   onPreviewFile: (file: FileEntity) => void;
   onOpenFolder?: () => void;
-  onShowInFolder?: (folderId: ItemId | null) => void;
 }
 
 function NewFolderTile({
@@ -120,7 +119,6 @@ export function ContentsGrid({
   onDelete,
   onPreviewFile,
   onOpenFolder,
-  onShowInFolder,
 }: ContentsGridProps) {
   const { data } = useBreadcrumbs(folderId);
   const breadcrumbs = data?.entries ?? [];
@@ -178,11 +176,6 @@ export function ContentsGrid({
                     onOpen={() => onPreviewFile(file)}
                     onRename={() => onRename(file)}
                     onDelete={() => onDelete(file)}
-                    onShowInFolder={
-                      isSearching && onShowInFolder
-                        ? () => onShowInFolder(file.parentId)
-                        : undefined
-                    }
                   />
                 </li>
               ))}

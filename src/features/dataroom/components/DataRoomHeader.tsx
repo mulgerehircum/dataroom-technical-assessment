@@ -32,12 +32,8 @@ export function DataRoomHeader({
   const currentFolder = data?.ancestors.at(-1) ?? null;
   const inputRef = useRef<HTMLInputElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const isSearching = searchQuery.trim().length > 0;
-  const title = isSearching
-    ? "Search"
-    : folderId === null
-      ? "All Files"
-      : (breadcrumbs.at(-1)?.name ?? "All Files");
+  const title =
+    folderId === null ? "All Files" : (breadcrumbs.at(-1)?.name ?? "All Files");
 
   const showHistory =
     historyOpen &&
@@ -55,7 +51,7 @@ export function DataRoomHeader({
             <h1 className="truncate text-2xl font-extrabold tracking-tight">
               {title}
             </h1>
-            {!isSearching && currentFolder && (
+            {currentFolder && (
               <Button
                 type="button"
                 variant="ghost"

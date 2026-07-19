@@ -1,7 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { folderQueryKey } from "@/features/dataroom/hooks/useFolder";
-import type { FolderViewData } from "@/features/dataroom/hooks/folder-view";
 import type {
+  BreadcrumbEntry,
   DataRoomItem,
   FolderEntity,
   ItemId,
@@ -10,9 +9,10 @@ import type {
 type QuerySnapshot<T> = [readonly unknown[], T | undefined][];
 
 export interface RenameCacheSnapshot {
-  views: QuerySnapshot<FolderViewData>;
+  contents: QuerySnapshot<DataRoomItem[]>;
+  breadcrumbs: QuerySnapshot<BreadcrumbEntry[]>;
   search: QuerySnapshot<DataRoomItem[]>;
-  folder: FolderEntity | null | undefined;
+  folder: FolderEntity | undefined;
   folderQueryKey: readonly unknown[];
 }
 
@@ -24,38 +24,39 @@ export async function optimisticRename(
 ): Promise<RenameCacheSnapshot> {
   const trimmed = name.trim();
   const now = Date.now();
-  const singleFolderKey = folderQueryKey(id);
+  const folderQueryKey = ["dataroom", "folder", id] as const;
 
   await queryClient.cancelQueries({ queryKey: ["dataroom"] });
 
-  const views = queryClient.getQueriesData<FolderViewData>({
-    queryKey: ["dataroom", "folder-view"],
+  const contents = queryClient.getQueriesData<DataRoomItem[]>({
+    queryKey: ["dataroom", "folder-contents"],
+  });
+  const breadcrumbs = queryClient.getQueriesData<BreadcrumbEntry[]>({
+    queryKey: ["dataroom", "breadcrumbs"],
   });
   const search = queryClient.getQueriesData<DataRoomItem[]>({
     queryKey: ["dataroom", "search"],
   });
-  const folder = queryClient.getQueryData<FolderEntity | null>(singleFolderKey);
+  const folder = queryClient.getQueryData<FolderEntity>(folderQueryKey);
 
-  for (const [queryKey, data] of views) {
-    if (!data) continue;
-    const touchesItem = data.items.some((item) => item.id === id);
-    const touchesCrumb = data.entries.some((crumb) => crumb.id === id);
-    const touchesAncestor = data.ancestors.some((ancestor) => ancestor.id === id);
-    if (!touchesItem && !touchesCrumb && !touchesAncestor) continue;
-
-    queryClient.setQueryData<FolderViewData>(queryKey, {
-      entries: data.entries.map((crumb) =>
-        crumb.id === id ? { ...crumb, name: trimmed } : crumb,
-      ),
-      ancestors: data.ancestors.map((ancestor) =>
-        ancestor.id === id
-          ? { ...ancestor, name: trimmed, updatedAt: now }
-          : ancestor,
-      ),
-      items: data.items.map((item) =>
+  for (const [queryKey, data] of contents) {
+    if (!data?.some((item) => item.id === id)) continue;
+    queryClient.setQueryData<DataRoomItem[]>(
+      queryKey,
+      data.map((item) =>
         item.id === id ? { ...item, name: trimmed, updatedAt: now } : item,
       ),
-    });
+    );
+  }
+
+  for (const [queryKey, data] of breadcrumbs) {
+    if (!data?.some((crumb) => crumb.id === id)) continue;
+    queryClient.setQueryData<BreadcrumbEntry[]>(
+      queryKey,
+      data.map((crumb) =>
+        crumb.id === id ? { ...crumb, name: trimmed } : crumb,
+      ),
+    );
   }
 
   for (const [queryKey, data] of search) {
@@ -69,21 +70,24 @@ export async function optimisticRename(
   }
 
   if (folder) {
-    queryClient.setQueryData<FolderEntity>(singleFolderKey, {
+    queryClient.setQueryData<FolderEntity>(folderQueryKey, {
       ...folder,
       name: trimmed,
       updatedAt: now,
     });
   }
 
-  return { views, search, folder, folderQueryKey: singleFolderKey };
+  return { contents, breadcrumbs, search, folder, folderQueryKey };
 }
 
 export function restoreRenameSnapshot(
   queryClient: QueryClient,
   snapshot: RenameCacheSnapshot,
 ): void {
-  for (const [queryKey, data] of snapshot.views) {
+  for (const [queryKey, data] of snapshot.contents) {
+    queryClient.setQueryData(queryKey, data);
+  }
+  for (const [queryKey, data] of snapshot.breadcrumbs) {
     queryClient.setQueryData(queryKey, data);
   }
   for (const [queryKey, data] of snapshot.search) {

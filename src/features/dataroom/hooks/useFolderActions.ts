@@ -2,23 +2,25 @@ import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import {
-  folderViewQueryKey,
-  type FolderViewData,
-} from "@/features/dataroom/hooks/folder-view";
-import { setFolderViewItems } from "@/features/dataroom/hooks/folder-view-cache";
+import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
 import {
   optimisticRename,
   restoreRenameSnapshot,
 } from "@/features/dataroom/hooks/optimistic-rename";
-import type { FolderEntity, ItemId } from "@/features/dataroom/model/types";
+import type {
+  DataRoomItem,
+  FolderEntity,
+  ItemId,
+} from "@/features/dataroom/model/types";
 
-type FolderViewSnapshot = [readonly unknown[], FolderViewData | undefined][];
+type FolderContentsSnapshot = [readonly unknown[], DataRoomItem[] | undefined][];
 
 export function useFolderActions() {
   const queryClient = useQueryClient();
   const { userId } = useAuth();
 
+  // Broad "dataroom" prefix so both folder-contents and breadcrumb queries
+  // (which embed a renamed ancestor's name) refresh together.
   const invalidateContents = () =>
     queryClient.invalidateQueries({ queryKey: ["dataroom"] });
 
@@ -31,7 +33,8 @@ export function useFolderActions() {
       parentId: ItemId | null;
     }) => dataRoomRepository.createFolder(name, parentId),
     onMutate: async ({ name, parentId }) => {
-      await queryClient.cancelQueries({ queryKey: folderViewQueryKey(parentId) });
+      const queryKey = folderContentsQueryKey(parentId);
+      await queryClient.cancelQueries({ queryKey });
 
       const optimisticId = `pending-${crypto.randomUUID()}`;
       const optimisticFolder: FolderEntity = {
@@ -46,24 +49,26 @@ export function useFolderActions() {
         isCreating: true,
       };
 
-      setFolderViewItems(queryClient, parentId, (current) => [
+      queryClient.setQueryData<DataRoomItem[]>(queryKey, (current = []) => [
         ...current,
         optimisticFolder,
       ]);
 
-      return { parentId, optimisticId };
+      return { queryKey, optimisticId };
     },
     onError: (error, _variables, context) => {
       if (context) {
-        setFolderViewItems(queryClient, context.parentId, (current) =>
-          current.filter((item) => item.id !== context.optimisticId),
+        queryClient.setQueryData<DataRoomItem[]>(
+          context.queryKey,
+          (current = []) =>
+            current.filter((item) => item.id !== context.optimisticId),
         );
       }
       toast.error(error instanceof Error ? error.message : "Create failed");
     },
     onSuccess: (created, _variables, context) => {
       if (!context) return;
-      setFolderViewItems(queryClient, context.parentId, (current) => {
+      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) => {
         const withoutOptimistic = current.filter(
           (item) => item.id !== context.optimisticId,
         );
@@ -91,17 +96,17 @@ export function useFolderActions() {
   const deleteFolder = useMutation({
     mutationFn: (id: ItemId) => dataRoomRepository.deleteFolder(id),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["dataroom", "folder-view"] });
-      const previous: FolderViewSnapshot = queryClient.getQueriesData<FolderViewData>({
-        queryKey: ["dataroom", "folder-view"],
-      });
+      await queryClient.cancelQueries({ queryKey: ["dataroom", "folder-contents"] });
+      const previous: FolderContentsSnapshot = queryClient.getQueriesData<
+        DataRoomItem[]
+      >({ queryKey: ["dataroom", "folder-contents"] });
 
       for (const [queryKey, data] of previous) {
-        if (!data?.items.some((item) => item.id === id)) continue;
-        queryClient.setQueryData<FolderViewData>(queryKey, {
-          ...data,
-          items: data.items.filter((item) => item.id !== id),
-        });
+        if (!data?.some((item) => item.id === id)) continue;
+        queryClient.setQueryData<DataRoomItem[]>(
+          queryKey,
+          data.filter((item) => item.id !== id),
+        );
       }
 
       return { previous };

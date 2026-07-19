@@ -11,9 +11,10 @@ import { FilePreview } from "@/features/dataroom/components/FilePreview";
 import { CreateFolderDialog } from "@/features/dataroom/dialogs/CreateFolderDialog";
 import { RenameItemDialog } from "@/features/dataroom/dialogs/RenameItemDialog";
 import { DeleteItemDialog } from "@/features/dataroom/dialogs/DeleteItemDialog";
-import { useFolderView } from "@/features/dataroom/hooks/useFolderView";
+import { useBreadcrumbs } from "@/features/dataroom/hooks/useBreadcrumbs";
 import { useFileActions } from "@/features/dataroom/hooks/useFileActions";
 import { useFolderActions } from "@/features/dataroom/hooks/useFolderActions";
+import { useFolderContents } from "@/features/dataroom/hooks/useFolderContents";
 import { useSearch } from "@/features/dataroom/hooks/useSearch";
 import { useSearchHistory } from "@/features/dataroom/hooks/useSearchHistory";
 import type {
@@ -27,11 +28,29 @@ export function DataRoomPage() {
   const folderId: ItemId | null = params.folderId ?? null;
   const navigate = useNavigate();
   const {
-    data: folderView,
-    isPending: folderPending,
-    isFetched: folderFetched,
-    isPlaceholderData: folderPlaceholder,
-  } = useFolderView(folderId);
+    data: breadcrumbsData,
+    isFetched: breadcrumbsFetched,
+    isPlaceholderData: breadcrumbsPlaceholder,
+  } = useBreadcrumbs(folderId);
+
+  // Missing / deleted folder: chain is empty after a real fetch (ignore CLS
+  // placeholder from the previous folder) — send the user home.
+  const folderMissing =
+    folderId !== null &&
+    breadcrumbsFetched &&
+    !breadcrumbsPlaceholder &&
+    (breadcrumbsData?.ancestors.length ?? 0) === 0;
+  // Wait for breadcrumbs before /api/items so a dead folder doesn't also 404
+  // (and retry) on the contents endpoint.
+  const folderReady =
+    folderId === null ||
+    (!breadcrumbsPlaceholder &&
+      (breadcrumbsData?.ancestors.length ?? 0) > 0);
+
+  const { data: items = [], isPending: folderPending } = useFolderContents(
+    folderId,
+    { enabled: folderReady },
+  );
   const { deleteFolder, renameFolder } = useFolderActions();
   const { deleteFile, renameFile } = useFileActions();
 
@@ -42,22 +61,17 @@ export function DataRoomPage() {
     searchHistory.add,
   );
   const isSearching = searchQuery.trim().length > 0;
-  const items = folderView?.items ?? [];
   // First load / new folder / new search only — background polls keep showing data.
-  const showSkeleton = isSearching ? searchPending : folderPending;
+  const showSkeleton = isSearching
+    ? searchPending
+    : folderId !== null && !folderReady
+      ? !folderMissing
+      : folderPending;
 
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<DataRoomItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DataRoomItem | null>(null);
   const [previewFile, setPreviewFile] = useState<FileEntity | null>(null);
-
-  // Missing / deleted folder: empty ancestors after a real fetch (ignore CLS
-  // placeholder from the previous folder) — send the user home.
-  const folderMissing =
-    folderId !== null &&
-    folderFetched &&
-    !folderPlaceholder &&
-    (folderView?.ancestors.length ?? 0) === 0;
 
   useEffect(() => {
     if (!folderMissing) return;
@@ -77,13 +91,6 @@ export function DataRoomPage() {
     const mutation =
       renameTarget.type === "folder" ? renameFolder : renameFile;
     mutation.mutate({ id: renameTarget.id, name });
-  };
-
-  const clearSearch = () => setSearchQuery("");
-
-  const showInFolder = (parentId: ItemId | null) => {
-    clearSearch();
-    navigate(parentId === null ? "/" : `/folder/${parentId}`);
   };
 
   if (folderMissing) {
@@ -117,8 +124,7 @@ export function DataRoomPage() {
             onRename={setRenameTarget}
             onDelete={setDeleteTarget}
             onPreviewFile={setPreviewFile}
-            onOpenFolder={clearSearch}
-            onShowInFolder={showInFolder}
+            onOpenFolder={() => setSearchQuery("")}
           />
         )}
       </div>
