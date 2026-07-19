@@ -1,7 +1,10 @@
 import { generateId } from "@/lib/ids";
 import { validateFileUpload, validateItemName } from "@/features/dataroom/model/validation";
 import { dedupeName } from "@/features/dataroom/utils/file-name";
-import type { DataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
+import type {
+  CreateFileOptions,
+  DataRoomRepository,
+} from "@/features/dataroom/storage/dataroom.repository";
 import type { DataRoomItem, FileEntity, FolderEntity, ItemId } from "@/features/dataroom/model/types";
 
 /**
@@ -11,12 +14,28 @@ import type { DataRoomItem, FileEntity, FolderEntity, ItemId } from "@/features/
  */
 const FAKE_OWNER_ID = "user_test";
 
+export type FailNextMethod = "createFile" | "deleteFile" | "deleteFolder";
+
 let folders: FolderEntity[] = [];
 let files: FileEntity[] = [];
+const pendingFailures = new Map<FailNextMethod, Error>();
+
+/** Queue a one-shot rejection for the next call to the given method. */
+export function failNext(method: FailNextMethod, error?: Error): void {
+  pendingFailures.set(method, error ?? new Error("Mocked request failure"));
+}
+
+function throwIfFailed(method: FailNextMethod): void {
+  const error = pendingFailures.get(method);
+  if (!error) return;
+  pendingFailures.delete(method);
+  throw error;
+}
 
 export function resetFakeRepository(): void {
   folders = [];
   files = [];
+  pendingFailures.clear();
 }
 
 function sortItems(items: DataRoomItem[]): DataRoomItem[] {
@@ -104,20 +123,39 @@ export const fakeDataRoomRepository: DataRoomRepository = {
   },
 
   async deleteFolder(id) {
+    throwIfFailed("deleteFolder");
     const idsToDelete = new Set([id, ...getDescendantIds(id)]);
     folders = folders.filter((folder) => !idsToDelete.has(folder.id));
     files = files.filter((file) => !idsToDelete.has(file.id));
   },
 
-  async createFile(file, parentId) {
+  async createFile(file, parentId, options?: CreateFileOptions) {
+    throwIfFailed("createFile");
     const validation = validateFileUpload(file);
     if (!validation.ok) throw new Error(validation.message);
 
+    const trimmedName = file.name.trim();
+    const onConflict = options?.onConflict ?? "keepBoth";
     const now = Date.now();
+
+    if (onConflict === "replace") {
+      const existing = files.find(
+        (candidate) =>
+          candidate.parentId === parentId && candidate.name === trimmedName,
+      );
+      if (existing) {
+        existing.mimeType = "application/pdf";
+        existing.size = file.size;
+        existing.blobUrl = `blob:fake/${generateId()}`;
+        existing.updatedAt = now;
+        return { ...existing };
+      }
+    }
+
     const entity: FileEntity = {
       id: generateId(),
       type: "file",
-      name: dedupeName(file.name.trim(), siblingNames(parentId)),
+      name: dedupeName(trimmedName, siblingNames(parentId)),
       parentId,
       ownerId: FAKE_OWNER_ID,
       mimeType: "application/pdf",
@@ -142,6 +180,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
   },
 
   async deleteFile(id) {
+    throwIfFailed("deleteFile");
     files = files.filter((file) => file.id !== id);
   },
 

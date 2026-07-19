@@ -10,21 +10,45 @@ beforeEach(async () => {
 });
 
 describe("DeleteItemDialog", () => {
-  it("deletes a folder and everything nested inside it", async () => {
+  it("warns that a non-empty folder and its items will be deleted", async () => {
     const parent = await dataRoomRepository.createFolder("Contracts", null);
     await dataRoomRepository.createFolder("2024", parent.id);
     const onClose = vi.fn();
 
-    renderWithProviders(<DeleteItemDialog item={parent} onClose={onClose} />);
+    renderWithProviders(
+      <DeleteItemDialog
+        item={{ ...parent, itemCount: 1 }}
+        onClose={onClose}
+      />,
+    );
 
     expect(
-      screen.getByText(/and everything inside it will be permanently deleted/i),
+      screen.getByText(
+        /"Contracts" and its 1 item will be permanently deleted\. This cannot be undone\./i,
+      ),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(await dataRoomRepository.listChildren(null)).toHaveLength(0);
+  });
+
+  it("uses a softer confirmation for an empty folder", async () => {
+    const folder = await dataRoomRepository.createFolder("Empty", null);
+    const onClose = vi.fn();
+
+    renderWithProviders(
+      <DeleteItemDialog
+        item={{ ...folder, itemCount: 0 }}
+        onClose={onClose}
+      />,
+    );
+
+    expect(
+      screen.getByText(/"Empty" will be permanently deleted\./i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/cannot be undone/i)).not.toBeInTheDocument();
   });
 
   it("deletes a single file", async () => {

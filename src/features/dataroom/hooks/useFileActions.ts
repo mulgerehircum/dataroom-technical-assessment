@@ -1,12 +1,17 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
+import {
+  dataRoomRepository,
+  type FileConflictPolicy,
+} from "@/features/dataroom/storage/dataroom.repository";
 import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
 import type {
   DataRoomItem,
   FileEntity,
   ItemId,
 } from "@/features/dataroom/model/types";
+
+type FolderContentsSnapshot = [readonly unknown[], DataRoomItem[] | undefined][];
 
 export function useFileActions() {
   const queryClient = useQueryClient();
@@ -19,11 +24,13 @@ export function useFileActions() {
     mutationFn: ({
       file,
       parentId,
+      onConflict,
     }: {
       file: File;
       parentId: ItemId | null;
-    }) => dataRoomRepository.createFile(file, parentId),
-    onMutate: async ({ file, parentId }) => {
+      onConflict?: FileConflictPolicy;
+    }) => dataRoomRepository.createFile(file, parentId, { onConflict }),
+    onMutate: async ({ file, parentId, onConflict }) => {
       const queryKey = folderContentsQueryKey(parentId);
       await queryClient.cancelQueries({ queryKey });
 
@@ -42,10 +49,16 @@ export function useFileActions() {
         isUploading: true,
       };
 
-      queryClient.setQueryData<DataRoomItem[]>(queryKey, (current = []) => [
-        ...current,
-        optimisticFile,
-      ]);
+      queryClient.setQueryData<DataRoomItem[]>(queryKey, (current = []) => {
+        const withoutReplaced =
+          onConflict === "replace"
+            ? current.filter(
+                (item) =>
+                  !(item.type === "file" && item.name === file.name && !item.isUploading),
+              )
+            : current;
+        return [...withoutReplaced, optimisticFile];
+      });
 
       return { queryKey, optimisticId };
     },
@@ -57,9 +70,15 @@ export function useFileActions() {
     },
     onSuccess: (created, _variables, context) => {
       if (!context) return;
-      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) =>
-        current.map((item) => (item.id === context.optimisticId ? created : item)),
-      );
+      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) => {
+        const withoutOptimistic = current.filter(
+          (item) => item.id !== context.optimisticId,
+        );
+        const withoutSameId = withoutOptimistic.filter(
+          (item) => item.id !== created.id,
+        );
+        return [...withoutSameId, created];
+      });
     },
     onSettled: invalidateContents,
   });
@@ -72,7 +91,29 @@ export function useFileActions() {
 
   const deleteFile = useMutation({
     mutationFn: (id: ItemId) => dataRoomRepository.deleteFile(id),
-    onSuccess: invalidateContents,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["dataroom", "folder-contents"] });
+      const previous: FolderContentsSnapshot = queryClient.getQueriesData<
+        DataRoomItem[]
+      >({ queryKey: ["dataroom", "folder-contents"] });
+
+      for (const [queryKey, data] of previous) {
+        if (!data?.some((item) => item.id === id)) continue;
+        queryClient.setQueryData<DataRoomItem[]>(
+          queryKey,
+          data.filter((item) => item.id !== id),
+        );
+      }
+
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      if (!context) return;
+      for (const [queryKey, data] of context.previous) {
+        queryClient.setQueryData(queryKey, data);
+      }
+    },
+    onSettled: invalidateContents,
   });
 
   return { uploadFile, renameFile, deleteFile };

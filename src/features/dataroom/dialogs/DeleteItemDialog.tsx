@@ -18,6 +18,20 @@ interface DeleteItemDialogProps {
   onClose: () => void;
 }
 
+function formatItemCount(count: number): string {
+  return count === 1 ? "1 item" : `${count} items`;
+}
+
+function deleteDescription(item: DataRoomItem): string {
+  if (item.type === "file") {
+    return `"${item.name}" will be permanently deleted.`;
+  }
+  if (item.itemCount === 0) {
+    return `"${item.name}" will be permanently deleted.`;
+  }
+  return `"${item.name}" and its ${formatItemCount(item.itemCount)} will be permanently deleted. This cannot be undone.`;
+}
+
 export function DeleteItemDialog({ item, onClose }: DeleteItemDialogProps) {
   const { deleteFolder } = useFolderActions();
   const { deleteFile } = useFileActions();
@@ -36,9 +50,7 @@ export function DeleteItemDialog({ item, onClose }: DeleteItemDialogProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {item.type}?</AlertDialogTitle>
           <AlertDialogDescription>
-            {item.type === "folder"
-              ? `"${item.name}" and everything inside it will be permanently deleted.`
-              : `"${item.name}" will be permanently deleted.`}
+            {deleteDescription(item)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

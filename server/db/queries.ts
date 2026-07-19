@@ -241,6 +241,44 @@ export async function createFileRow(input: {
   return toFileEntity(row);
 }
 
+export async function findFileByNameInParent(
+  name: string,
+  parentId: string | null,
+  ownerId: string,
+): Promise<FileEntity | undefined> {
+  const db = getDb();
+  const [row] = await db
+    .select()
+    .from(files)
+    .where(
+      and(
+        eq(files.ownerId, ownerId),
+        eq(files.name, name),
+        parentFilter(files.parentId, parentId),
+      ),
+    );
+  return row ? toFileEntity(row) : undefined;
+}
+
+/** Overwrites blob metadata for an existing file row (same id + name). */
+export async function replaceFileRow(
+  id: string,
+  input: {
+    mimeType: string;
+    size: number;
+    blobUrl: string;
+    blobPathname: string;
+  },
+): Promise<FileEntity> {
+  const db = getDb();
+  const [row] = await db
+    .update(files)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(files.id, id))
+    .returning();
+  return toFileEntity(row);
+}
+
 export async function renameFileRow(id: string, name: string): Promise<FileEntity> {
   const db = getDb();
   const [row] = await db

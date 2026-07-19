@@ -52,7 +52,7 @@ export const apiRepository: DataRoomRepository = {
 
   deleteFolder: (id) => apiFetch<void>(`/folders/${id}`, { method: "DELETE" }),
 
-  createFile: async (file, parentId) => {
+  createFile: async (file, parentId, options) => {
     const validation = validateFileUpload(file);
     if (!validation.ok) throw new Error(validation.message);
 
@@ -75,6 +75,7 @@ export const apiRepository: DataRoomRepository = {
         size: file.size,
         blobUrl: blob.url,
         blobPathname: blob.pathname,
+        onConflict: options?.onConflict ?? "keepBoth",
       }),
     });
   },

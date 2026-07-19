@@ -33,6 +33,7 @@ export function DataRoomPage() {
   return (
     <div className="flex h-svh flex-col bg-background">
       <DataRoomHeader
+        folderId={folderId}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         onCreateFolder={() => setIsCreateFolderOpen(true)}
@@ -40,7 +41,6 @@ export function DataRoomPage() {
       {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-        {!isSearching && <UploadDropzone folderId={folderId} />}
         <ContentsGrid
           items={isSearching ? searchResults : items}
           onRename={setRenameTarget}
@@ -48,6 +48,8 @@ export function DataRoomPage() {
           onPreviewFile={setPreviewFile}
         />
       </div>
+
+      <UploadDropzone folderId={folderId} />
 
       <CreateFolderDialog
         parentId={folderId}

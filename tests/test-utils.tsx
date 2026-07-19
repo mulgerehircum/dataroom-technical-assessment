@@ -4,7 +4,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render } from "@testing-library/react";
 import { DataRoomPage } from "@/features/dataroom/components/DataRoomPage";
 
-export { resetFakeRepository } from "./fakes/fake-dataroom.repository";
+export {
+  failNext,
+  resetFakeRepository,
+} from "./fakes/fake-dataroom.repository";
 
 function createTestQueryClient() {
   return new QueryClient({

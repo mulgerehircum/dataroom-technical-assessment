@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import type { ItemId } from "@/features/dataroom/model/types";
+import type { DataRoomItem, ItemId } from "@/features/dataroom/model/types";
+
+type FolderContentsSnapshot = [readonly unknown[], DataRoomItem[] | undefined][];
 
 export function useFolderActions() {
   const queryClient = useQueryClient();
@@ -29,7 +31,29 @@ export function useFolderActions() {
 
   const deleteFolder = useMutation({
     mutationFn: (id: ItemId) => dataRoomRepository.deleteFolder(id),
-    onSuccess: invalidateContents,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["dataroom", "folder-contents"] });
+      const previous: FolderContentsSnapshot = queryClient.getQueriesData<
+        DataRoomItem[]
+      >({ queryKey: ["dataroom", "folder-contents"] });
+
+      for (const [queryKey, data] of previous) {
+        if (!data?.some((item) => item.id === id)) continue;
+        queryClient.setQueryData<DataRoomItem[]>(
+          queryKey,
+          data.filter((item) => item.id !== id),
+        );
+      }
+
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      if (!context) return;
+      for (const [queryKey, data] of context.previous) {
+        queryClient.setQueryData(queryKey, data);
+      }
+    },
+    onSettled: invalidateContents,
   });
 
   return { createFolder, renameFolder, deleteFolder };

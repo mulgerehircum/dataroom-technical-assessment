@@ -1,65 +1,84 @@
-import { useRef, useState, type DragEvent } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { UploadCloud } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useFileActions } from "@/features/dataroom/hooks/useFileActions";
+import { useUploadFiles } from "@/features/dataroom/hooks/useUploadFiles";
 import type { ItemId } from "@/features/dataroom/model/types";
 
 interface UploadDropzoneProps {
   folderId: ItemId | null;
 }
 
+function isFileDrag(event: DragEvent): boolean {
+  return Array.from(event.dataTransfer?.types ?? []).includes("Files");
+}
+
+/** Full-window overlay that appears only while dragging files from the desktop. */
 export function UploadDropzone({ folderId }: UploadDropzoneProps) {
-  const { uploadFile } = useFileActions();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const { uploadFiles, conflictDialog } = useUploadFiles(folderId);
   const [isDragActive, setIsDragActive] = useState(false);
 
-  const upload = (file: File) => {
-    uploadFile.mutate(
-      { file, parentId: folderId },
-      { onError: (error) => toast.error(error.message) },
-    );
-  };
+  useEffect(() => {
+    let dragDepth = 0;
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragActive(false);
-    const file = event.dataTransfer.files[0];
-    if (file) upload(file);
-  };
+    const reset = () => {
+      dragDepth = 0;
+      setIsDragActive(false);
+    };
+
+    const onDragEnter = (event: DragEvent) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      dragDepth += 1;
+      setIsDragActive(true);
+    };
+
+    const onDragLeave = (event: DragEvent) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      dragDepth -= 1;
+      if (dragDepth <= 0) reset();
+    };
+
+    const onDragOver = (event: DragEvent) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+    };
+
+    const onDrop = (event: DragEvent) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      reset();
+      const dropped = event.dataTransfer?.files;
+      if (dropped && dropped.length > 0) {
+        void uploadFiles(dropped);
+      }
+    };
+
+    window.addEventListener("dragenter", onDragEnter);
+    window.addEventListener("dragleave", onDragLeave);
+    window.addEventListener("dragover", onDragOver);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("dragenter", onDragEnter);
+      window.removeEventListener("dragleave", onDragLeave);
+      window.removeEventListener("dragover", onDragOver);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, [folderId, uploadFiles]);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => inputRef.current?.click()}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") inputRef.current?.click();
-      }}
-      onDragOver={(event) => {
-        event.preventDefault();
-        setIsDragActive(true);
-      }}
-      onDragLeave={() => setIsDragActive(false)}
-      onDrop={handleDrop}
-      className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-border bg-card p-6 text-[13.5px] text-muted-foreground transition-colors hover:bg-accent",
-        isDragActive && "border-primary bg-accent text-foreground",
+    <>
+      {isDragActive && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6"
+        >
+          <div className="flex w-full max-w-lg flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed border-primary bg-card px-8 py-16 text-[15px] font-medium text-foreground shadow-sm">
+            <UploadCloud className="size-10 text-primary" />
+            Drop PDF to upload
+          </div>
+        </div>
       )}
-    >
-      <UploadCloud className="size-6" />
-      Drag a PDF here or click to upload
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) upload(file);
-          event.target.value = "";
-        }}
-      />
-    </div>
+      {conflictDialog}
+    </>
   );
 }

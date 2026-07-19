@@ -153,7 +153,7 @@ room).
 Known gaps, given the time-boxed nature of this pass:
 
 - Rename/delete are only reachable via each item's right-click context menu — no dedicated
-  affordance for keyboard/touch users
+  affordance for keyboard/touch users (files also expose an Actions dropdown; folders do not)
 - No loading/error UI beyond `sonner` toasts on mutation failure
 - Search UX is minimal (no result highlighting, no "jump to this file's location" breadcrumb)
 - `FilePreview` renders PDFs via a plain `<iframe src={blobUrl}>` — no fallback for browsers that
@@ -161,3 +161,14 @@ Known gaps, given the time-boxed nature of this pass:
 - Public blob access means a leaked/guessed file URL is viewable without auth; per-user isolation is
   enforced at the Postgres/API ownership layer, not by URL secrecy — a deliberate, documented MVP
   tradeoff, not an oversight
+- Upload conflict dialog supports Replace / Keep both / Cancel (and "apply to all" for multi-file
+  batches), but automated tests only cover Keep both and Replace — Cancel and apply-to-all are
+  untested
+- In-flight upload rows (`isUploading`) are React Query memory only; a refresh mid-upload drops the
+  optimistic row (completed uploads in Neon + Blob are fine). No resume / IndexedDB queue
+- If a Blob upload succeeds and the subsequent `POST /api/files` metadata write fails, the blob can
+  be orphaned (no cleanup path)
+- No DB unique constraint on `(owner_id, parent_id, name)` — concurrent same-name uploads can still
+  race past the conflict dialog
+- The `api/`/`server/` layer has no automated tests (manual `curl` against real services only); the
+  fake in-memory repository covers UI/hook behavior, not the real replace/blob-delete path
