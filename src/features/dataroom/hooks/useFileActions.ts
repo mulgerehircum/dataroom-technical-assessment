@@ -1,6 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
-import type { ItemId } from "@/features/dataroom/model/types";
+import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
+import type {
+  DataRoomItem,
+  FileEntity,
+  ItemId,
+} from "@/features/dataroom/model/types";
 
 export function useFileActions() {
   const queryClient = useQueryClient();
@@ -16,7 +21,44 @@ export function useFileActions() {
       file: File;
       parentId: ItemId | null;
     }) => dataRoomRepository.createFile(file, parentId),
-    onSuccess: invalidateContents,
+    onMutate: async ({ file, parentId }) => {
+      const queryKey = folderContentsQueryKey(parentId);
+      await queryClient.cancelQueries({ queryKey });
+
+      const optimisticId = `pending-${crypto.randomUUID()}`;
+      const optimisticFile: FileEntity = {
+        id: optimisticId,
+        type: "file",
+        name: file.name,
+        parentId,
+        mimeType: "application/pdf",
+        size: file.size,
+        blobUrl: "",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        isUploading: true,
+      };
+
+      queryClient.setQueryData<DataRoomItem[]>(queryKey, (current = []) => [
+        ...current,
+        optimisticFile,
+      ]);
+
+      return { queryKey, optimisticId };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) return;
+      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) =>
+        current.filter((item) => item.id !== context.optimisticId),
+      );
+    },
+    onSuccess: (created, _variables, context) => {
+      if (!context) return;
+      queryClient.setQueryData<DataRoomItem[]>(context.queryKey, (current = []) =>
+        current.map((item) => (item.id === context.optimisticId ? created : item)),
+      );
+    },
+    onSettled: invalidateContents,
   });
 
   const renameFile = useMutation({

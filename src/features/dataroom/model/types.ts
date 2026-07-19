@@ -26,6 +26,8 @@ export interface FileEntity {
   blobUrl: string;
   createdAt: number;
   updatedAt: number;
+  /** Client-only: optimistic row while the upload mutation is in flight. */
+  isUploading?: boolean;
 }
 
 export type DataRoomItem = FolderEntity | FileEntity;
