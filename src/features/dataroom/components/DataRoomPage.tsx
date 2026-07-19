@@ -124,6 +124,7 @@ export function DataRoomPage() {
             onRename={setRenameTarget}
             onDelete={setDeleteTarget}
             onPreviewFile={setPreviewFile}
+            onOpenFolder={() => setSearchQuery("")}
           />
         )}
       </div>

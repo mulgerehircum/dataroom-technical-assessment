@@ -20,13 +20,15 @@ interface FolderItemProps {
   folder: FolderEntity;
   onRename: () => void;
   onDelete: () => void;
+  /** Called when the user opens the folder (e.g. clear search). */
+  onOpen?: () => void;
 }
 
 function formatItemCount(count: number): string {
   return count === 1 ? "1 item" : `${count} items`;
 }
 
-export function FolderItem({ folder, onRename, onDelete }: FolderItemProps) {
+export function FolderItem({ folder, onRename, onDelete, onOpen }: FolderItemProps) {
   const isCreating = Boolean(folder.isCreating);
 
   const body = (
@@ -63,6 +65,7 @@ export function FolderItem({ folder, onRename, onDelete }: FolderItemProps) {
       ) : (
         <Link
           to={`/folder/${folder.id}`}
+          onClick={onOpen}
           className="flex min-w-0 flex-1 items-center gap-3.5 px-[18px] py-[18px]"
         >
           <span

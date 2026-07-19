@@ -143,4 +143,22 @@ describe("DataRoomPage", () => {
     expect(folderLink).toHaveTextContent("Data Room / Contracts");
     expect(folderLink).not.toHaveTextContent("item");
   });
+
+  it("opens a folder from search and clears the query", async () => {
+    const contracts = await dataRoomRepository.createFolder("Contracts", null);
+    await dataRoomRepository.createFolder("Nested", contracts.id);
+
+    renderDataRoomApp();
+    await waitForContentsLoaded();
+
+    await searchFor("Nested");
+
+    fireEvent.click(await screen.findByRole("link", { name: /Nested/i }));
+
+    expect(
+      await screen.findByRole("button", { name: "New subfolder of Nested" }),
+    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search by name...")).toHaveValue("");
+    expect(screen.getByRole("navigation")).toBeInTheDocument();
+  });
 });

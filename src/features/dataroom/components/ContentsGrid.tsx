@@ -14,6 +14,7 @@ interface ContentsGridProps {
   onRename: (item: DataRoomItem) => void;
   onDelete: (item: DataRoomItem) => void;
   onPreviewFile: (file: FileEntity) => void;
+  onOpenFolder?: () => void;
 }
 
 function NewFolderTile({
@@ -117,6 +118,7 @@ export function ContentsGrid({
   onRename,
   onDelete,
   onPreviewFile,
+  onOpenFolder,
 }: ContentsGridProps) {
   const { data } = useBreadcrumbs(folderId);
   const breadcrumbs = data?.entries ?? [];
@@ -142,6 +144,7 @@ export function ContentsGrid({
                 folder={folder}
                 onRename={() => onRename(folder)}
                 onDelete={() => onDelete(folder)}
+                onOpen={onOpenFolder}
               />
             ))}
             {!isSearching && (
