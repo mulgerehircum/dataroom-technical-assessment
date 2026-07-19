@@ -5,6 +5,7 @@ import { DataRoomHeader } from "@/features/dataroom/components/DataRoomHeader";
 import { Breadcrumbs } from "@/features/dataroom/components/Breadcrumbs";
 import { ContentsGrid } from "@/features/dataroom/components/ContentsGrid";
 import { ContentsSkeleton } from "@/features/dataroom/components/ContentsSkeleton";
+import { SearchEmptyState } from "@/features/dataroom/components/SearchEmptyState";
 import { UploadDropzone } from "@/features/dataroom/components/UploadDropzone";
 import { FilePreview } from "@/features/dataroom/components/FilePreview";
 import { CreateFolderDialog } from "@/features/dataroom/dialogs/CreateFolderDialog";
@@ -98,10 +99,13 @@ export function DataRoomPage() {
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
         {showSkeleton ? (
           <ContentsSkeleton />
+        ) : isSearching && searchResults.length === 0 ? (
+          <SearchEmptyState query={searchQuery} />
         ) : (
           <ContentsGrid
             items={isSearching ? searchResults : items}
             folderId={folderId}
+            isSearching={isSearching}
             onCreateFolder={() => setIsCreateFolderOpen(true)}
             onRename={setRenameTarget}
             onDelete={setDeleteTarget}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBreadcrumbs,
+  formatParentPath,
   getChildren,
   getDescendantIds,
   isDescendantOf,
@@ -88,6 +89,24 @@ describe("buildBreadcrumbs", () => {
   it("returns just the root entry when at the top level", () => {
     const breadcrumbs = buildBreadcrumbs([contracts, year2024], null);
     expect(breadcrumbs).toEqual([{ id: null, name: "Data Room" }]);
+  });
+});
+
+describe("formatParentPath", () => {
+  const foldersById = new Map([
+    [contracts.id, contracts],
+    [year2024.id, year2024],
+  ]);
+
+  it("returns just the root for top-level items", () => {
+    expect(formatParentPath(null, foldersById)).toBe("Data Room");
+  });
+
+  it("joins ancestors from root to the parent", () => {
+    expect(formatParentPath("A", foldersById)).toBe("Data Room / Contracts");
+    expect(formatParentPath("B", foldersById)).toBe(
+      "Data Room / Contracts / 2024",
+    );
   });
 });
 

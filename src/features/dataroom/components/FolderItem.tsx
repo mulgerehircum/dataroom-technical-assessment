@@ -75,8 +75,8 @@ export function FolderItem({ folder, onRename, onDelete }: FolderItemProps) {
             <span className="block truncate text-sm font-bold tracking-wide uppercase">
               {folder.name}
             </span>
-            <span className="mt-0.5 block text-xs text-text-tertiary">
-              {formatItemCount(folder.itemCount)}
+            <span className="mt-0.5 block truncate text-xs text-text-tertiary">
+              {folder.path ?? formatItemCount(folder.itemCount)}
             </span>
           </span>
         </Link>

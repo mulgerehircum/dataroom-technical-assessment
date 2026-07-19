@@ -1,6 +1,7 @@
 import { generateId } from "@/lib/ids";
 import { validateFileUpload, validateItemName } from "@/features/dataroom/model/validation";
 import { dedupeName } from "@/features/dataroom/utils/file-name";
+import { formatParentPath } from "@/features/dataroom/utils/folder-tree";
 import type {
   CreateFileOptions,
   DataRoomRepository,
@@ -207,11 +208,19 @@ export const fakeDataRoomRepository: DataRoomRepository = {
 
   async search(query) {
     const needle = query.toLowerCase();
+    const foldersById = new Map(folders.map((folder) => [folder.id, folder]));
     return sortItems(
       withLiveItemCounts(
-        [...folders, ...files].filter((item) =>
-          item.name.toLowerCase().includes(needle),
-        ),
+        [...folders, ...files]
+          .filter((item) => item.name.toLowerCase().includes(needle))
+          .map((item) =>
+            item.type === "folder"
+              ? {
+                  ...item,
+                  path: formatParentPath(item.parentId, foldersById),
+                }
+              : item,
+          ),
       ),
     );
   },

@@ -54,6 +54,34 @@ export function buildBreadcrumbs(
   return breadcrumbs;
 }
 
+/**
+ * Location label for a search hit: ancestors from root → parent
+ * (does not include the item itself). Root-level items → `"Data Room"`.
+ */
+export function formatParentPath(
+  parentId: ItemId | null,
+  foldersById: ReadonlyMap<
+    ItemId,
+    Pick<FolderEntity, "name" | "parentId">
+  >,
+): string {
+  const parts: string[] = [];
+  let cursor = parentId;
+  const seen = new Set<ItemId>();
+
+  while (cursor !== null) {
+    if (seen.has(cursor)) break;
+    seen.add(cursor);
+    const folder = foldersById.get(cursor);
+    if (!folder) break;
+    parts.unshift(folder.name);
+    cursor = folder.parentId;
+  }
+
+  parts.unshift(ROOT_FOLDER_NAME);
+  return parts.join(" / ");
+}
+
 /** True when `targetFolderId` sits anywhere under `candidateAncestorId`. */
 export function isDescendantOf(
   items: DataRoomItem[],

@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
+import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
 import { renderDataRoomApp, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
@@ -17,6 +18,19 @@ async function waitForContentsLoaded() {
     await screen.findByRole("button", { name: /New (sub)?folder/i }),
   ).toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Loading contents" })).toBeNull();
+}
+
+async function searchFor(query: string) {
+  const input = screen.getByPlaceholderText("Search by name...");
+  fireEvent.change(input, { target: { value: query } });
+  await waitFor(
+    () => {
+      expect(
+        screen.queryByRole("status", { name: "Loading contents" }),
+      ).toBeNull();
+    },
+    { timeout: 2000 },
+  );
 }
 
 describe("DataRoomPage", () => {
@@ -96,5 +110,32 @@ describe("DataRoomPage", () => {
       screen.getByRole("status", { name: "Loading contents" }),
     ).toBeInTheDocument();
     await waitForContentsLoaded();
+  });
+
+  it("shows an empty state when search has no matches", async () => {
+    renderDataRoomApp();
+    await waitForContentsLoaded();
+
+    await searchFor("zzzz-no-match");
+
+    expect(
+      await screen.findByText('No results for “zzzz-no-match”'),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Try a different name")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New folder" })).toBeNull();
+  });
+
+  it("shows the parent path on folder search matches", async () => {
+    const contracts = await dataRoomRepository.createFolder("Contracts", null);
+    await dataRoomRepository.createFolder("2024", contracts.id);
+
+    renderDataRoomApp();
+    await waitForContentsLoaded();
+
+    await searchFor("2024");
+
+    const folderLink = await screen.findByRole("link", { name: /2024/i });
+    expect(folderLink).toHaveTextContent("Data Room / Contracts");
+    expect(folderLink).not.toHaveTextContent("item");
   });
 });

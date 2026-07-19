@@ -4,6 +4,7 @@ import type {
   FileEntity,
   FolderEntity,
 } from "../../src/features/dataroom/model/types.js";
+import { formatParentPath } from "../../src/features/dataroom/utils/folder-tree.js";
 import { getDb } from "./client.js";
 import { toFileEntity, toFolderEntity } from "./mappers.js";
 import { files, folders } from "./schema.js";
@@ -300,7 +301,7 @@ export async function searchItems(
 ): Promise<DataRoomItem[]> {
   const db = getDb();
   const pattern = `%${query}%`;
-  const [folderRows, fileRows] = await Promise.all([
+  const [folderRows, fileRows, allFolderRows] = await Promise.all([
     db
       .select()
       .from(folders)
@@ -309,7 +310,24 @@ export async function searchItems(
       .select()
       .from(files)
       .where(and(eq(files.ownerId, ownerId), sql`${files.name} ILIKE ${pattern}`)),
+    db
+      .select({
+        id: folders.id,
+        name: folders.name,
+        parentId: folders.parentId,
+      })
+      .from(folders)
+      .where(eq(folders.ownerId, ownerId)),
   ]);
+  const foldersById = new Map(
+    allFolderRows.map((row) => [row.id, row] as const),
+  );
   const mappedFolders = await withItemCounts(folderRows, ownerId);
-  return sortItems([...mappedFolders, ...fileRows.map(toFileEntity)]);
+  return sortItems([
+    ...mappedFolders.map((folder) => ({
+      ...folder,
+      path: formatParentPath(folder.parentId, foldersById),
+    })),
+    ...fileRows.map(toFileEntity),
+  ]);
 }

@@ -17,6 +17,11 @@ export interface FolderEntity {
   updatedAt: number;
   /** Client-only: optimistic card while createFolder is in flight. */
   isCreating?: boolean;
+  /**
+   * Ancestor path for search results, e.g. `"Data Room / Contracts"`.
+   * Absent in normal folder listings.
+   */
+  path?: string;
 }
 
 export type SupportedFileMimeType = "application/pdf";
