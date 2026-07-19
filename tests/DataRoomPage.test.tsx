@@ -68,18 +68,19 @@ describe("DataRoomPage", () => {
 
   it("redirects home when the folder id does not exist", async () => {
     const errorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
-    const listSpy = vi.spyOn(dataRoomRepository, "listChildren");
+    const viewSpy = vi.spyOn(dataRoomRepository, "getFolderView");
     renderDataRoomApp("/folder/missing-folder-id");
 
     expect(
       await screen.findByRole("button", { name: "New folder" }),
     ).toBeInTheDocument();
     expect(errorSpy).toHaveBeenCalledWith("This folder no longer exists.");
+    // One view call for the dead folder, then root remounts with folderId null.
     expect(
-      listSpy.mock.calls.every(([parentId]) => parentId !== "missing-folder-id"),
-    ).toBe(true);
+      viewSpy.mock.calls.filter(([id]) => id === "missing-folder-id"),
+    ).toHaveLength(1);
     errorSpy.mockRestore();
-    listSpy.mockRestore();
+    viewSpy.mockRestore();
   });
 
   it("uploads a pdf and opens it in the preview dialog", async () => {
@@ -160,5 +161,33 @@ describe("DataRoomPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Search by name...")).toHaveValue("");
     expect(screen.getByRole("navigation")).toBeInTheDocument();
+  });
+
+  it("shows a file search hit in its parent folder", async () => {
+    const contracts = await dataRoomRepository.createFolder("Contracts", null);
+    await dataRoomRepository.createFile(
+      new File(["pdf"], "nda.pdf", { type: "application/pdf" }),
+      contracts.id,
+    );
+
+    renderDataRoomApp();
+    await waitForContentsLoaded();
+
+    await searchFor("nda");
+
+    fireEvent.click(screen.getByRole("button", { name: "Actions for nda.pdf" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Show in folder" }));
+
+    expect(
+      await screen.findByRole("button", { name: "New subfolder of Contracts" }),
+    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search by name...")).toHaveValue("");
+    expect(
+      await screen.findByRole("button", {
+        name: (accessibleName) =>
+          accessibleName.includes("nda.pdf") &&
+          !accessibleName.startsWith("Actions"),
+      }),
+    ).toBeInTheDocument();
   });
 });

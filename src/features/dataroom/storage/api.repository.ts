@@ -32,15 +32,26 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const apiRepository: DataRoomRepository = {
+  getFolderView: async (folderId) => {
+    const path = folderId
+      ? `/view?folderId=${encodeURIComponent(folderId)}`
+      : "/view";
+    try {
+      return await apiFetch<{ ancestors: FolderEntity[]; items: DataRoomItem[] }>(
+        path,
+      );
+    } catch (error) {
+      // Missing folder → 404; empty ancestors lets the page redirect home.
+      if (folderId) return { ancestors: [], items: [] };
+      throw error;
+    }
+  },
+
   listChildren: (parentId) =>
     apiFetch<DataRoomItem[]>(`/items${parentId ? `?parentId=${parentId}` : ""}`),
 
   getFolder: (id) =>
     apiFetch<FolderEntity>(`/folders/${id}`).catch(() => undefined),
-
-  // One recursive SQL round-trip on the server — avoids N client getFolder walks.
-  listBreadcrumbChain: (id) =>
-    apiFetch<FolderEntity[]>(`/folders/${id}/breadcrumbs`).catch(() => []),
 
   createFolder: (name, parentId) =>
     apiFetch<FolderEntity>("/folders", {

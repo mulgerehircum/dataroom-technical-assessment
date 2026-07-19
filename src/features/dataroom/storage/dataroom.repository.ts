@@ -15,13 +15,13 @@ export interface CreateFileOptions {
 
 /** Storage-agnostic contract the hooks layer depends on. */
 export interface DataRoomRepository {
+  /** Folder page payload: ancestors + children. Missing folder → empty ancestors. */
+  getFolderView(folderId: ItemId | null): Promise<{
+    ancestors: FolderEntity[];
+    items: DataRoomItem[];
+  }>;
   listChildren(parentId: ItemId | null): Promise<DataRoomItem[]>;
   getFolder(id: ItemId): Promise<FolderEntity | undefined>;
-  /**
-   * Ancestor chain root→leaf for `id`. Empty when the folder does not exist
-   * (mirrors the API's 404 → [] handling on the client).
-   */
-  listBreadcrumbChain(id: ItemId): Promise<FolderEntity[]>;
   createFolder(name: string, parentId: ItemId | null): Promise<FolderEntity>;
   renameFolder(id: ItemId, name: string): Promise<void>;
   /** Deletes the folder and everything nested inside it. */
