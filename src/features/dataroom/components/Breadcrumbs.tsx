@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { Fragment } from "react";
 import { useBreadcrumbs } from "@/features/dataroom/hooks/useBreadcrumbs";
 import type { ItemId } from "@/features/dataroom/model/types";
+import { cn } from "@/lib/utils";
 
 interface BreadcrumbsProps {
   currentFolderId: ItemId | null;
@@ -11,23 +12,41 @@ export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
   const { data: breadcrumbs = [] } = useBreadcrumbs(currentFolderId);
 
   return (
-    <nav className="flex items-center gap-1 px-6 py-2 text-[13px] font-semibold tracking-[0.03em] text-muted-foreground uppercase">
+    <nav
+      aria-label="breadcrumb"
+      className="flex flex-wrap items-center gap-1.5 border-b border-border bg-secondary/30 px-6 py-3"
+    >
       {breadcrumbs.map((crumb, index) => {
         const isLast = index === breadcrumbs.length - 1;
+        const isEven = index % 2 === 0;
+        const chipClass = cn(
+          "inline-flex items-center rounded-lg px-3 py-1.5 text-sm text-secondary-foreground transition-colors",
+          isEven ? "bg-secondary" : "bg-muted",
+          isLast
+            ? "font-semibold ring-1 ring-primary/40"
+            : "font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_8%)]",
+        );
+
         return (
-          <span key={crumb.id ?? "root"} className="flex items-center gap-1">
-            {index > 0 && <ChevronRight className="size-3.5" />}
+          <Fragment key={crumb.id ?? "root"}>
+            {index > 0 && (
+              <span aria-hidden="true" className="px-0.5 text-sm text-muted-foreground">
+                /
+              </span>
+            )}
             {isLast ? (
-              <span className="text-primary">{crumb.name}</span>
+              <span aria-current="page" className={chipClass}>
+                {crumb.name}
+              </span>
             ) : (
               <Link
                 to={crumb.id ? `/folder/${crumb.id}` : "/"}
-                className="hover:text-foreground"
+                className={chipClass}
               >
                 {crumb.name}
               </Link>
             )}
-          </span>
+          </Fragment>
         );
       })}
     </nav>
