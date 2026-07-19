@@ -61,7 +61,10 @@ export function useFolderActions() {
       }
       toast.error(error instanceof Error ? error.message : "Create failed");
     },
-    onSuccess: (created, _variables, context) => {
+    onSuccess: (created, variables, context) => {
+      if (created.name !== variables.name.trim()) {
+        toast.message(`Saved as "${created.name}"`);
+      }
       if (!context) return;
       setFolderViewItems(queryClient, context.parentId, (current) => {
         const withoutOptimistic = current.filter(
@@ -84,6 +87,11 @@ export function useFolderActions() {
     onError: (error, _variables, context) => {
       if (context) restoreRenameSnapshot(queryClient, context);
       toast.error(error instanceof Error ? error.message : "Rename failed");
+    },
+    onSuccess: (updated, { id, name }) => {
+      if (updated.name === name.trim()) return;
+      toast.message(`Saved as "${updated.name}"`);
+      void optimisticRename(queryClient, id, updated.name);
     },
     onSettled: invalidateContents,
   });

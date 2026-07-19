@@ -328,6 +328,9 @@ export async function searchItems(
       ...folder,
       path: formatParentPath(folder.parentId, foldersById),
     })),
-    ...fileRows.map(toFileEntity),
+    ...fileRows.map((row) => ({
+      ...toFileEntity(row),
+      path: formatParentPath(row.parentId, foldersById),
+    })),
   ]);
 }

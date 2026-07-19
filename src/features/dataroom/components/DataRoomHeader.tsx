@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBreadcrumbs } from "@/features/dataroom/hooks/useBreadcrumbs";
 import { useUploadFiles } from "@/features/dataroom/hooks/useUploadFiles";
+import { ROOT_FOLDER_NAME } from "@/features/dataroom/model/constants";
 import type { FolderEntity, ItemId } from "@/features/dataroom/model/types";
 
 interface DataRoomHeaderProps {
@@ -15,6 +16,8 @@ interface DataRoomHeaderProps {
   searchHistory: string[];
   onRemoveSearchHistory: (query: string) => void;
   onClearSearchHistory: () => void;
+  /** Hide/disable upload while search results are showing. */
+  uploadDisabled?: boolean;
 }
 
 export function DataRoomHeader({
@@ -25,6 +28,7 @@ export function DataRoomHeader({
   searchHistory,
   onRemoveSearchHistory,
   onClearSearchHistory,
+  uploadDisabled = false,
 }: DataRoomHeaderProps) {
   const { uploadFiles, conflictDialog } = useUploadFiles(folderId);
   const { data } = useBreadcrumbs(folderId);
@@ -36,8 +40,8 @@ export function DataRoomHeader({
   const title = isSearching
     ? "Search"
     : folderId === null
-      ? "All Files"
-      : (breadcrumbs.at(-1)?.name ?? "All Files");
+      ? ROOT_FOLDER_NAME
+      : (breadcrumbs.at(-1)?.name ?? ROOT_FOLDER_NAME);
 
   const showHistory =
     historyOpen &&
@@ -46,7 +50,7 @@ export function DataRoomHeader({
 
   return (
     <>
-      <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-6">
         <div className="min-w-0">
           <p className="text-[12px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
             Acme Data Room
@@ -69,7 +73,7 @@ export function DataRoomHeader({
             )}
           </div>
         </div>
-        <div className="relative w-full max-w-sm">
+        <div className="relative order-last w-full max-w-sm sm:order-0 sm:flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -88,6 +92,7 @@ export function DataRoomHeader({
             }}
             placeholder="Search by name..."
             className="rounded-lg border-border bg-card pr-8 pl-8"
+            aria-label="Search by name"
             aria-autocomplete="list"
             aria-expanded={showHistory}
             aria-controls={showHistory ? "search-history-list" : undefined}
@@ -154,14 +159,16 @@ export function DataRoomHeader({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => inputRef.current?.click()}
-            className="rounded-lg px-4 font-bold tracking-[0.02em] uppercase"
-          >
-            <Upload />
-            Upload
-          </Button>
+          {!uploadDisabled && (
+            <Button
+              size="sm"
+              onClick={() => inputRef.current?.click()}
+              className="rounded-lg px-4 font-bold tracking-[0.02em] uppercase"
+            >
+              <Upload />
+              Upload
+            </Button>
+          )}
           <UserButton afterSignOutUrl="/" />
         </div>
         <input

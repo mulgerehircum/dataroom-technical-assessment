@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { validateItemName } from "@/features/dataroom/model/validation";
 import type { DataRoomItem } from "@/features/dataroom/model/types";
 
 interface RenameItemDialogProps {
@@ -23,12 +24,18 @@ export function RenameItemDialog({
   onConfirm,
 }: RenameItemDialogProps) {
   const [name, setName] = useState(item.name);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const next = name.trim();
     if (!next || next === item.name) {
       onClose();
+      return;
+    }
+    const validation = validateItemName(next);
+    if (!validation.ok) {
+      setError(validation.message);
       return;
     }
     onConfirm(next);
@@ -49,8 +56,18 @@ export function RenameItemDialog({
               id="item-name"
               autoFocus
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "item-name-error" : undefined}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (error) setError(null);
+              }}
             />
+            {error && (
+              <p id="item-name-error" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button type="submit" disabled={!name.trim()}>

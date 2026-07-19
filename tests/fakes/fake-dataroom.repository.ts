@@ -147,6 +147,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
     if (!folder) throw new Error("Folder not found.");
     folder.name = dedupeName(trimmed, siblingNames(folder.parentId, id));
     folder.updatedAt = Date.now();
+    return { ...folder, itemCount: itemCountFor(id) };
   },
 
   async deleteFolder(id) {
@@ -205,6 +206,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
     if (!file) throw new Error("File not found.");
     file.name = dedupeName(trimmed, siblingNames(file.parentId, id));
     file.updatedAt = Date.now();
+    return { ...file };
   },
 
   async deleteFile(id) {
@@ -219,14 +221,10 @@ export const fakeDataRoomRepository: DataRoomRepository = {
       withLiveItemCounts(
         [...folders, ...files]
           .filter((item) => item.name.toLowerCase().includes(needle))
-          .map((item) =>
-            item.type === "folder"
-              ? {
-                  ...item,
-                  path: formatParentPath(item.parentId, foldersById),
-                }
-              : item,
-          ),
+          .map((item) => ({
+            ...item,
+            path: formatParentPath(item.parentId, foldersById),
+          })),
       ),
     );
   },

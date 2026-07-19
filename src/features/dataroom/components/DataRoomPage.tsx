@@ -5,6 +5,7 @@ import { DataRoomHeader } from "@/features/dataroom/components/DataRoomHeader";
 import { Breadcrumbs } from "@/features/dataroom/components/Breadcrumbs";
 import { ContentsGrid } from "@/features/dataroom/components/ContentsGrid";
 import { ContentsSkeleton } from "@/features/dataroom/components/ContentsSkeleton";
+import { QueryErrorState } from "@/features/dataroom/components/QueryErrorState";
 import { SearchEmptyState } from "@/features/dataroom/components/SearchEmptyState";
 import { UploadDropzone } from "@/features/dataroom/components/UploadDropzone";
 import { FilePreview } from "@/features/dataroom/components/FilePreview";
@@ -31,16 +32,22 @@ export function DataRoomPage() {
     isPending: folderPending,
     isFetched: folderFetched,
     isPlaceholderData: folderPlaceholder,
+    isError: folderIsError,
+    error: folderError,
+    refetch: refetchFolder,
   } = useFolderView(folderId);
   const { deleteFolder, renameFolder } = useFolderActions();
   const { deleteFile, renameFile } = useFileActions();
 
   const [searchQuery, setSearchQuery] = useState("");
   const searchHistory = useSearchHistory();
-  const { data: searchResults = [], isPending: searchPending } = useSearch(
-    searchQuery,
-    searchHistory.add,
-  );
+  const {
+    data: searchResults = [],
+    isPending: searchPending,
+    isError: searchIsError,
+    error: searchError,
+    refetch: refetchSearch,
+  } = useSearch(searchQuery, searchHistory.add);
   const isSearching = searchQuery.trim().length > 0;
   const items = folderView?.items ?? [];
   // First load / new folder / new search only — background polls keep showing data.
@@ -51,12 +58,13 @@ export function DataRoomPage() {
   const [deleteTarget, setDeleteTarget] = useState<DataRoomItem | null>(null);
   const [previewFile, setPreviewFile] = useState<FileEntity | null>(null);
 
-  // Missing / deleted folder: empty ancestors after a real fetch (ignore CLS
-  // placeholder from the previous folder) — send the user home.
+  // Missing / deleted folder: empty ancestors after a real successful fetch
+  // (ignore CLS placeholder and network errors — those get a retry UI).
   const folderMissing =
     folderId !== null &&
     folderFetched &&
     !folderPlaceholder &&
+    !folderIsError &&
     (folderView?.ancestors.length ?? 0) === 0;
 
   useEffect(() => {
@@ -90,6 +98,54 @@ export function DataRoomPage() {
     return null;
   }
 
+  const mainContent = (() => {
+    if (showSkeleton) return <ContentsSkeleton />;
+    if (isSearching && searchIsError) {
+      return (
+        <QueryErrorState
+          message={
+            searchError instanceof Error
+              ? searchError.message
+              : "Search failed."
+          }
+          onRetry={() => {
+            void refetchSearch();
+          }}
+        />
+      );
+    }
+    if (isSearching && searchResults.length === 0) {
+      return <SearchEmptyState query={searchQuery} />;
+    }
+    if (!isSearching && folderIsError) {
+      return (
+        <QueryErrorState
+          message={
+            folderError instanceof Error
+              ? folderError.message
+              : "Could not load this folder."
+          }
+          onRetry={() => {
+            void refetchFolder();
+          }}
+        />
+      );
+    }
+    return (
+      <ContentsGrid
+        items={isSearching ? searchResults : items}
+        folderId={folderId}
+        isSearching={isSearching}
+        onCreateFolder={() => setIsCreateFolderOpen(true)}
+        onRename={setRenameTarget}
+        onDelete={setDeleteTarget}
+        onPreviewFile={setPreviewFile}
+        onOpenFolder={clearSearch}
+        onShowInFolder={showInFolder}
+      />
+    );
+  })();
+
   return (
     <div className="flex h-svh flex-col bg-background">
       <DataRoomHeader
@@ -100,30 +156,15 @@ export function DataRoomPage() {
         searchHistory={searchHistory.history}
         onRemoveSearchHistory={searchHistory.remove}
         onClearSearchHistory={searchHistory.clear}
+        uploadDisabled={isSearching}
       />
       {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-        {showSkeleton ? (
-          <ContentsSkeleton />
-        ) : isSearching && searchResults.length === 0 ? (
-          <SearchEmptyState query={searchQuery} />
-        ) : (
-          <ContentsGrid
-            items={isSearching ? searchResults : items}
-            folderId={folderId}
-            isSearching={isSearching}
-            onCreateFolder={() => setIsCreateFolderOpen(true)}
-            onRename={setRenameTarget}
-            onDelete={setDeleteTarget}
-            onPreviewFile={setPreviewFile}
-            onOpenFolder={clearSearch}
-            onShowInFolder={showInFolder}
-          />
-        )}
+        {mainContent}
       </div>
 
-      <UploadDropzone folderId={folderId} />
+      <UploadDropzone folderId={folderId} disabled={isSearching} />
 
       <CreateFolderDialog
         parentId={folderId}

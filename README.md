@@ -153,13 +153,13 @@ room).
 
 Known gaps, given the time-boxed nature of this pass:
 
-- Rename/delete are only reachable via each item's right-click context menu — no dedicated
-  affordance for keyboard/touch users (files also expose an Actions dropdown; folders do not)
-- No loading/error UI beyond `sonner` toasts on mutation failure
-- Search UX is minimal (no result highlighting, no "jump to this file's location" breadcrumb);
-  recent searches are local to the browser (`localStorage`), not synced per user
-- `FilePreview` renders PDFs via a plain `<iframe src={blobUrl}>` — no fallback for browsers that
-  don't render PDFs inline
+- Search UX is still light (no result highlighting); recent searches are local to the browser
+  (`localStorage`), not synced per user. Folder and file hits show parent paths; files also expose
+  **Show in folder**. Upload is disabled while search results are showing.
+- Folder/search load failures show an in-page retry UI; missing folders still redirect home with a
+  toast. Mutation failures continue to surface via `sonner` toasts.
+- `FilePreview` uses an iframe plus Download / open-in-new-tab links — some browsers may still not
+  render PDFs inline, but there is an escape hatch.
 - Public blob access means a leaked/guessed file URL is viewable without auth; per-user isolation is
   enforced at the Postgres/API ownership layer, not by URL secrecy — a deliberate, documented MVP
   tradeoff, not an oversight
@@ -171,6 +171,7 @@ Known gaps, given the time-boxed nature of this pass:
 - If a Blob upload succeeds and the subsequent `POST /api/files` metadata write fails, the blob can
   be orphaned (no cleanup path)
 - No DB unique constraint on `(owner_id, parent_id, name)` — concurrent same-name uploads can still
-  race past the conflict dialog
+  race past the conflict dialog; create/rename still server-dedupe and toast when the saved name
+  differs
 - The `api/`/`server/` layer has no automated tests (manual `curl` against real services only); the
   fake in-memory repository covers UI/hook behavior, not the real replace/blob-delete path

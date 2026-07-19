@@ -145,6 +145,48 @@ describe("DataRoomPage", () => {
     expect(folderLink).not.toHaveTextContent("item");
   });
 
+  it("shows the parent path on file search matches", async () => {
+    const contracts = await dataRoomRepository.createFolder("Contracts", null);
+    await dataRoomRepository.createFile(
+      new File(["pdf"], "nda.pdf", { type: "application/pdf" }),
+      contracts.id,
+    );
+
+    renderDataRoomApp();
+    await waitForContentsLoaded();
+
+    await searchFor("nda");
+
+    const fileButton = await screen.findByRole("button", {
+      name: (accessibleName) =>
+        accessibleName.includes("nda.pdf") &&
+        !accessibleName.startsWith("Actions"),
+    });
+    expect(fileButton).toHaveTextContent("Data Room / Contracts");
+  });
+
+  it("hides upload while searching", async () => {
+    renderDataRoomApp();
+    await waitForContentsLoaded();
+    expect(screen.getByRole("button", { name: /upload/i })).toBeInTheDocument();
+
+    await searchFor("anything");
+
+    expect(screen.queryByRole("button", { name: /upload/i })).toBeNull();
+  });
+
+  it("shows a retry UI when the folder view fails to load", async () => {
+    const viewSpy = vi
+      .spyOn(dataRoomRepository, "getFolderView")
+      .mockRejectedValue(new Error("Network down"));
+    renderDataRoomApp();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Network down");
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(screen.queryByText("This folder no longer exists.")).toBeNull();
+    viewSpy.mockRestore();
+  });
+
   it("opens a folder from search and clears the query", async () => {
     const contracts = await dataRoomRepository.createFolder("Contracts", null);
     await dataRoomRepository.createFolder("Nested", contracts.id);

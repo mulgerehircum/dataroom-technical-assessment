@@ -100,6 +100,11 @@ export function useFileActions() {
       if (context) restoreRenameSnapshot(queryClient, context);
       toast.error(error instanceof Error ? error.message : "Rename failed");
     },
+    onSuccess: (updated, { id, name }) => {
+      if (updated.name === name.trim()) return;
+      toast.message(`Saved as "${updated.name}"`);
+      void optimisticRename(queryClient, id, updated.name);
+    },
     onSettled: invalidateContents,
   });
 

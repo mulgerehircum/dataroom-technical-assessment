@@ -33,28 +33,26 @@ describe("RenameItemDialog", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("confirms renaming a file through the same dialog", async () => {
-    const file = await dataRoomRepository.createFile(
-      new File(["pdf"], "report.pdf", { type: "application/pdf" }),
-      null,
-    );
+  it("keeps the dialog open and shows an error for illegal characters", async () => {
+    const folder = await dataRoomRepository.createFolder("Old name", null);
     const onClose = vi.fn();
     const onConfirm = vi.fn();
 
     renderWithProviders(
       <RenameItemDialog
-        item={file}
+        item={folder}
         onClose={onClose}
         onConfirm={onConfirm}
       />,
     );
 
     fireEvent.change(await screen.findByLabelText("Name"), {
-      target: { value: "final.pdf" },
+      target: { value: "bad/name" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(onConfirm).toHaveBeenCalledWith("final.pdf");
-    expect(onClose).toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText(/cannot contain/i)).toBeInTheDocument();
   });
 });

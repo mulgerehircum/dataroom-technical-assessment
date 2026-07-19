@@ -15,7 +15,10 @@ export interface CreateFileOptions {
 
 /** Storage-agnostic contract the hooks layer depends on. */
 export interface DataRoomRepository {
-  /** Folder page payload: ancestors + children. Missing folder → empty ancestors. */
+  /**
+   * Folder page payload: ancestors + children.
+   * Missing folder (404) → empty ancestors. Other failures throw.
+   */
   getFolderView(folderId: ItemId | null): Promise<{
     ancestors: FolderEntity[];
     items: DataRoomItem[];
@@ -23,7 +26,7 @@ export interface DataRoomRepository {
   listChildren(parentId: ItemId | null): Promise<DataRoomItem[]>;
   getFolder(id: ItemId): Promise<FolderEntity | undefined>;
   createFolder(name: string, parentId: ItemId | null): Promise<FolderEntity>;
-  renameFolder(id: ItemId, name: string): Promise<void>;
+  renameFolder(id: ItemId, name: string): Promise<FolderEntity>;
   /** Deletes the folder and everything nested inside it. */
   deleteFolder(id: ItemId): Promise<void>;
   createFile(
@@ -31,7 +34,7 @@ export interface DataRoomRepository {
     parentId: ItemId | null,
     options?: CreateFileOptions,
   ): Promise<FileEntity>;
-  renameFile(id: ItemId, name: string): Promise<void>;
+  renameFile(id: ItemId, name: string): Promise<FileEntity>;
   deleteFile(id: ItemId): Promise<void>;
   search(query: string): Promise<DataRoomItem[]>;
 }

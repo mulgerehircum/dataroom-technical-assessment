@@ -5,6 +5,8 @@ import type { ItemId } from "@/features/dataroom/model/types";
 
 interface UploadDropzoneProps {
   folderId: ItemId | null;
+  /** Ignore desktop drags (e.g. while search results are showing). */
+  disabled?: boolean;
 }
 
 function isFileDrag(event: DragEvent): boolean {
@@ -12,11 +14,19 @@ function isFileDrag(event: DragEvent): boolean {
 }
 
 /** Full-window overlay that appears only while dragging files from the desktop. */
-export function UploadDropzone({ folderId }: UploadDropzoneProps) {
+export function UploadDropzone({
+  folderId,
+  disabled = false,
+}: UploadDropzoneProps) {
   const { uploadFiles, conflictDialog } = useUploadFiles(folderId);
   const [isDragActive, setIsDragActive] = useState(false);
 
   useEffect(() => {
+    if (disabled) {
+      setIsDragActive(false);
+      return;
+    }
+
     let dragDepth = 0;
 
     const reset = () => {
@@ -63,11 +73,11 @@ export function UploadDropzone({ folderId }: UploadDropzoneProps) {
       window.removeEventListener("dragover", onDragOver);
       window.removeEventListener("drop", onDrop);
     };
-  }, [folderId, uploadFiles]);
+  }, [disabled, folderId, uploadFiles]);
 
   return (
     <>
-      {isDragActive && (
+      {isDragActive && !disabled && (
         <div
           aria-hidden
           className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6"

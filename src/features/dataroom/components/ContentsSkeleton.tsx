@@ -18,16 +18,16 @@ function FolderCardSkeleton() {
 function FileRowSkeleton() {
   return (
     <div
-      className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem] items-center gap-3 px-3 py-3"
+      className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-3 px-3 py-3 md:grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem]"
       aria-hidden
     >
       <div className="flex min-w-0 items-center gap-3">
         <Skeleton className="h-[34px] w-[30px] shrink-0 rounded-[3px]" />
         <Skeleton className="h-3.5 w-40 max-w-full" />
       </div>
-      <Skeleton className="h-3 w-10" />
-      <Skeleton className="h-3 w-16" />
-      <div className="flex items-center gap-2">
+      <Skeleton className="hidden h-3 w-10 md:block" />
+      <Skeleton className="hidden h-3 w-16 md:block" />
+      <div className="hidden items-center gap-2 md:flex">
         <Skeleton className="size-6 shrink-0 rounded-full" />
         <Skeleton className="h-3 w-14" />
       </div>
@@ -57,11 +57,11 @@ export function ContentsSkeleton() {
       </section>
 
       <section className="flex flex-col">
-        <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem] gap-3 border-b border-border px-3 pb-2 text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase">
+        <div className="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-3 border-b border-border px-3 pb-2 text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase md:grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem]">
           <span>Name</span>
-          <span>Size</span>
-          <span>Modified</span>
-          <span>Owner</span>
+          <span className="hidden md:block">Size</span>
+          <span className="hidden md:block">Modified</span>
+          <span className="hidden md:block">Owner</span>
           <span className="sr-only">Actions</span>
         </div>
         <ul className="divide-y divide-border">

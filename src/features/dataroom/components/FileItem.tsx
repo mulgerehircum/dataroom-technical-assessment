@@ -67,7 +67,7 @@ export function FileItem({
   const row = (
     <div
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem] items-center gap-3 px-3 py-3 transition-colors hover:bg-accent",
+        "grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-3 px-3 py-3 transition-colors hover:bg-accent md:grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem]",
         isUploading && "pointer-events-none opacity-70",
       )}
     >
@@ -87,18 +87,27 @@ export function FileItem({
             />
           )}
         </span>
-        <span className="truncate text-[13.5px] font-medium">{file.name}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13.5px] font-medium">
+            {file.name}
+          </span>
+          {file.path && (
+            <span className="mt-0.5 block truncate text-xs text-text-tertiary">
+              {file.path}
+            </span>
+          )}
+        </span>
       </button>
 
-      <span className="text-[12.5px] text-muted-foreground">
+      <span className="hidden text-[12.5px] text-muted-foreground md:block">
         {isUploading ? "…" : formatFileSize(file.size)}
       </span>
 
-      <span className="text-[12.5px] text-muted-foreground">
+      <span className="hidden text-[12.5px] text-muted-foreground md:block">
         {isUploading ? "Uploading…" : formatModifiedDate(file.updatedAt)}
       </span>
 
-      <span className="flex min-w-0 items-center gap-2">
+      <span className="hidden min-w-0 items-center gap-2 md:flex">
         {ownerImageUrl ? (
           <img
             src={ownerImageUrl}

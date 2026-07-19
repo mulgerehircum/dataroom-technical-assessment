@@ -8,6 +8,10 @@ import type {
   FolderEntity,
 } from "@/features/dataroom/model/types";
 
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof Error && /not found/i.test(error.message);
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAuthToken();
   if (!token) {
@@ -41,8 +45,10 @@ export const apiRepository: DataRoomRepository = {
         path,
       );
     } catch (error) {
-      // Missing folder → 404; empty ancestors lets the page redirect home.
-      if (folderId) return { ancestors: [], items: [] };
+      // Missing folder → empty ancestors (page redirects home). Other errors propagate.
+      if (folderId && isNotFoundError(error)) {
+        return { ancestors: [], items: [] };
+      }
       throw error;
     }
   },
@@ -60,7 +66,7 @@ export const apiRepository: DataRoomRepository = {
     }),
 
   renameFolder: (id, name) =>
-    apiFetch<void>(`/folders/${id}`, {
+    apiFetch<FolderEntity>(`/folders/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ name }),
     }),
@@ -96,7 +102,7 @@ export const apiRepository: DataRoomRepository = {
   },
 
   renameFile: (id, name) =>
-    apiFetch<void>(`/files/${id}`, {
+    apiFetch<FileEntity>(`/files/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ name }),
     }),

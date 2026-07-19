@@ -41,6 +41,11 @@ export interface FileEntity {
   updatedAt: number;
   /** Client-only: optimistic row while the upload mutation is in flight. */
   isUploading?: boolean;
+  /**
+   * Ancestor path for search results, e.g. `"Data Room / Contracts"`.
+   * Absent in normal file listings.
+   */
+  path?: string;
 }
 
 export type DataRoomItem = FolderEntity | FileEntity;
