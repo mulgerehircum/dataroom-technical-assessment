@@ -4,7 +4,6 @@ import { UserButton } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBreadcrumbs } from "@/features/dataroom/hooks/useBreadcrumbs";
-import { useFolder } from "@/features/dataroom/hooks/useFolder";
 import { useUploadFiles } from "@/features/dataroom/hooks/useUploadFiles";
 import type { FolderEntity, ItemId } from "@/features/dataroom/model/types";
 
@@ -28,8 +27,9 @@ export function DataRoomHeader({
   onClearSearchHistory,
 }: DataRoomHeaderProps) {
   const { uploadFiles, conflictDialog } = useUploadFiles(folderId);
-  const { data: breadcrumbs = [] } = useBreadcrumbs(folderId);
-  const { data: currentFolder } = useFolder(folderId);
+  const { data } = useBreadcrumbs(folderId);
+  const breadcrumbs = data?.entries ?? [];
+  const currentFolder = data?.ancestors.at(-1) ?? null;
   const inputRef = useRef<HTMLInputElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const title =

@@ -116,7 +116,8 @@ export function ContentsGrid({
   onDelete,
   onPreviewFile,
 }: ContentsGridProps) {
-  const { data: breadcrumbs = [] } = useBreadcrumbs(folderId);
+  const { data } = useBreadcrumbs(folderId);
+  const breadcrumbs = data?.entries ?? [];
   const parentFolderName =
     folderId === null ? null : (breadcrumbs.at(-1)?.name ?? null);
 

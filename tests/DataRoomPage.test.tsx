@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { toast } from "sonner";
 import { renderDataRoomApp, resetFakeRepository } from "./test-utils";
 
 beforeEach(async () => {
@@ -49,6 +50,17 @@ describe("DataRoomPage", () => {
     const nav = screen.getByRole("navigation");
     expect(await within(nav).findByText("Contracts")).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Data Room" })).toBeInTheDocument();
+  });
+
+  it("redirects home when the folder id does not exist", async () => {
+    const errorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+    renderDataRoomApp("/folder/missing-folder-id");
+
+    expect(
+      await screen.findByRole("button", { name: "New folder" }),
+    ).toBeInTheDocument();
+    expect(errorSpy).toHaveBeenCalledWith("This folder no longer exists.");
+    errorSpy.mockRestore();
   });
 
   it("uploads a pdf and opens it in the preview dialog", async () => {

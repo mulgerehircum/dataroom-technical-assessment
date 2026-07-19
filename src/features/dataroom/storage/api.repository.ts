@@ -38,6 +38,10 @@ export const apiRepository: DataRoomRepository = {
   getFolder: (id) =>
     apiFetch<FolderEntity>(`/folders/${id}`).catch(() => undefined),
 
+  // One recursive SQL round-trip on the server — avoids N client getFolder walks.
+  listBreadcrumbChain: (id) =>
+    apiFetch<FolderEntity[]>(`/folders/${id}/breadcrumbs`).catch(() => []),
+
   createFolder: (name, parentId) =>
     apiFetch<FolderEntity>("/folders", {
       method: "POST",

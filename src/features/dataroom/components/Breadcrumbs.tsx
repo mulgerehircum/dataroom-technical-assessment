@@ -9,7 +9,8 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
-  const { data: breadcrumbs = [] } = useBreadcrumbs(currentFolderId);
+  const { data } = useBreadcrumbs(currentFolderId);
+  const breadcrumbs = data?.entries ?? [];
 
   return (
     <nav
@@ -35,6 +36,7 @@ export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
                 /
               </span>
             )}
+            {/* Root stays a link even when it's the only crumb (missing folder). */}
             {isRoot ? (
               <Link
                 to="/"

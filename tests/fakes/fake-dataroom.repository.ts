@@ -97,6 +97,18 @@ export const fakeDataRoomRepository: DataRoomRepository = {
     return { ...folder, itemCount: itemCountFor(id) };
   },
 
+  async listBreadcrumbChain(id) {
+    const chain: FolderEntity[] = [];
+    let cursor: ItemId | null = id;
+    while (cursor !== null) {
+      const folder = folders.find((candidate) => candidate.id === cursor);
+      if (!folder) return [];
+      chain.unshift({ ...folder, itemCount: itemCountFor(folder.id) });
+      cursor = folder.parentId;
+    }
+    return chain;
+  },
+
   async createFolder(name, parentId) {
     throwIfFailed("createFolder");
     const trimmed = name.trim();
