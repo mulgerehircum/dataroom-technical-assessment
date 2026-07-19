@@ -78,16 +78,31 @@ export function DataRoomHeader({
             onBlur={() => setHistoryOpen(false)}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
+                if (searchQuery) {
+                  onSearchQueryChange("");
+                  return;
+                }
                 setHistoryOpen(false);
                 event.currentTarget.blur();
               }
             }}
             placeholder="Search by name..."
-            className="rounded-lg border-border bg-card pl-8"
+            className="rounded-lg border-border bg-card pr-8 pl-8"
             aria-autocomplete="list"
             aria-expanded={showHistory}
             aria-controls={showHistory ? "search-history-list" : undefined}
           />
+          {isSearching && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              className="absolute top-1/2 right-2 z-10 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => onSearchQueryChange("")}
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
           {showHistory && (
             <div
               id="search-history-list"
