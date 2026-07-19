@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,13 +8,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useFolderActions } from "@/features/dataroom/hooks/useFolderActions";
-import { useFileActions } from "@/features/dataroom/hooks/useFileActions";
 import type { DataRoomItem } from "@/features/dataroom/model/types";
 
 interface DeleteItemDialogProps {
   item: DataRoomItem;
   onClose: () => void;
+  onConfirm: () => void;
 }
 
 function formatItemCount(count: number): string {
@@ -32,16 +30,15 @@ function deleteDescription(item: DataRoomItem): string {
   return `"${item.name}" and its ${formatItemCount(item.itemCount)} will be permanently deleted. This cannot be undone.`;
 }
 
-export function DeleteItemDialog({ item, onClose }: DeleteItemDialogProps) {
-  const { deleteFolder } = useFolderActions();
-  const { deleteFile } = useFileActions();
-
+export function DeleteItemDialog({
+  item,
+  onClose,
+  onConfirm,
+}: DeleteItemDialogProps) {
   const handleDelete = () => {
-    const mutation = item.type === "folder" ? deleteFolder : deleteFile;
-    mutation.mutate(item.id, {
-      onSuccess: onClose,
-      onError: (error) => toast.error(error.message),
-    });
+    onConfirm();
+    // Close immediately — the grid already drops the item in onMutate.
+    onClose();
   };
 
   return (

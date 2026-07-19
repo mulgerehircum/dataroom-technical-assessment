@@ -15,6 +15,8 @@ export interface FolderEntity {
   itemCount: number;
   createdAt: number;
   updatedAt: number;
+  /** Client-only: optimistic card while createFolder is in flight. */
+  isCreating?: boolean;
 }
 
 export type SupportedFileMimeType = "application/pdf";

@@ -13,7 +13,8 @@ describe("Breadcrumbs", () => {
   it("shows just the root when at the top level", async () => {
     renderWithProviders(<Breadcrumbs currentFolderId={null} />);
 
-    expect(await screen.findByText("Data Room")).toBeInTheDocument();
+    const rootCrumb = await screen.findByRole("link", { name: "Data Room" });
+    expect(rootCrumb).toHaveAttribute("href", "/");
   });
 
   it("walks up the ancestor chain to the root", async () => {

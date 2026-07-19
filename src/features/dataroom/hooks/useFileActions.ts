@@ -1,10 +1,15 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   dataRoomRepository,
   type FileConflictPolicy,
 } from "@/features/dataroom/storage/dataroom.repository";
 import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
+import {
+  optimisticRename,
+  restoreRenameSnapshot,
+} from "@/features/dataroom/hooks/optimistic-rename";
 import type {
   DataRoomItem,
   FileEntity,
@@ -18,7 +23,7 @@ export function useFileActions() {
   const { userId } = useAuth();
 
   const invalidateContents = () =>
-    queryClient.invalidateQueries({ queryKey: ["dataroom", "folder-contents"] });
+    queryClient.invalidateQueries({ queryKey: ["dataroom"] });
 
   const uploadFile = useMutation({
     mutationFn: ({
@@ -86,7 +91,13 @@ export function useFileActions() {
   const renameFile = useMutation({
     mutationFn: ({ id, name }: { id: ItemId; name: string }) =>
       dataRoomRepository.renameFile(id, name),
-    onSuccess: invalidateContents,
+    onMutate: async ({ id, name }) =>
+      optimisticRename(queryClient, id, name),
+    onError: (error, _variables, context) => {
+      if (context) restoreRenameSnapshot(queryClient, context);
+      toast.error(error instanceof Error ? error.message : "Rename failed");
+    },
+    onSettled: invalidateContents,
   });
 
   const deleteFile = useMutation({
@@ -108,10 +119,12 @@ export function useFileActions() {
       return { previous };
     },
     onError: (_error, _id, context) => {
-      if (!context) return;
-      for (const [queryKey, data] of context.previous) {
-        queryClient.setQueryData(queryKey, data);
+      if (context) {
+        for (const [queryKey, data] of context.previous) {
+          queryClient.setQueryData(queryKey, data);
+        }
       }
+      toast.error(_error instanceof Error ? _error.message : "Delete failed");
     },
     onSettled: invalidateContents,
   });

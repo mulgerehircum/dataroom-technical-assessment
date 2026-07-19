@@ -22,7 +22,9 @@ function useDebouncedSearchQuery(query: string, delayMs: number): string {
 }
 
 export function useSearch(query: string, onSearchSettled?: (query: string) => void) {
-  const searchQuery = useDebouncedSearchQuery(query.trim(), SEARCH_DEBOUNCE_MS);
+  const trimmed = query.trim();
+  const searchQuery = useDebouncedSearchQuery(trimmed, SEARCH_DEBOUNCE_MS);
+  const isDebouncing = trimmed.length > 0 && trimmed !== searchQuery;
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -30,9 +32,16 @@ export function useSearch(query: string, onSearchSettled?: (query: string) => vo
     }
   }, [searchQuery, onSearchSettled]);
 
-  return useQuery({
+  const result = useQuery({
     queryKey: ["dataroom", "search", searchQuery],
     queryFn: () => dataRoomRepository.search(searchQuery),
     enabled: searchQuery.length > 0,
   });
+
+  // Include debounce wait so the grid doesn't flash empty between keystrokes
+  // and the first request.
+  return {
+    ...result,
+    isPending: isDebouncing || (searchQuery.length > 0 && result.isPending),
+  };
 }

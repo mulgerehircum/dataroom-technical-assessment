@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
 import type {
   DataRoomItem,
-  FileEntity,
   ItemId,
 } from "@/features/dataroom/model/types";
 
@@ -18,8 +17,9 @@ function withPendingUploads(
 ): DataRoomItem[] {
   const pending =
     previousItems?.filter(
-      (item): item is FileEntity =>
-        item.type === "file" && Boolean(item.isUploading),
+      (item) =>
+        (item.type === "file" && Boolean(item.isUploading)) ||
+        (item.type === "folder" && Boolean(item.isCreating)),
     ) ?? [];
   if (pending.length === 0) return serverItems;
 

@@ -14,7 +14,13 @@ import type { DataRoomItem, FileEntity, FolderEntity, ItemId } from "@/features/
  */
 const FAKE_OWNER_ID = "user_test";
 
-export type FailNextMethod = "createFile" | "deleteFile" | "deleteFolder";
+export type FailNextMethod =
+  | "createFile"
+  | "createFolder"
+  | "deleteFile"
+  | "deleteFolder"
+  | "renameFile"
+  | "renameFolder";
 
 let folders: FolderEntity[] = [];
 let files: FileEntity[] = [];
@@ -92,6 +98,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
   },
 
   async createFolder(name, parentId) {
+    throwIfFailed("createFolder");
     const trimmed = name.trim();
     const validation = validateItemName(trimmed);
     if (!validation.ok) throw new Error(validation.message);
@@ -112,6 +119,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
   },
 
   async renameFolder(id, name) {
+    throwIfFailed("renameFolder");
     const trimmed = name.trim();
     const validation = validateItemName(trimmed);
     if (!validation.ok) throw new Error(validation.message);
@@ -169,6 +177,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
   },
 
   async renameFile(id, name) {
+    throwIfFailed("renameFile");
     const trimmed = name.trim();
     const validation = validateItemName(trimmed);
     if (!validation.ok) throw new Error(validation.message);

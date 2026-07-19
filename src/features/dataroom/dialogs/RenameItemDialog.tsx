@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -10,31 +9,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useFolderActions } from "@/features/dataroom/hooks/useFolderActions";
-import { useFileActions } from "@/features/dataroom/hooks/useFileActions";
 import type { DataRoomItem } from "@/features/dataroom/model/types";
 
 interface RenameItemDialogProps {
   item: DataRoomItem;
   onClose: () => void;
+  onConfirm: (name: string) => void;
 }
 
-export function RenameItemDialog({ item, onClose }: RenameItemDialogProps) {
+export function RenameItemDialog({
+  item,
+  onClose,
+  onConfirm,
+}: RenameItemDialogProps) {
   const [name, setName] = useState(item.name);
-  const { renameFolder } = useFolderActions();
-  const { renameFile } = useFileActions();
-
-  const mutation = item.type === "folder" ? renameFolder : renameFile;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    mutation.mutate(
-      { id: item.id, name },
-      {
-        onSuccess: onClose,
-        onError: (error) => toast.error(error.message),
-      },
-    );
+    const next = name.trim();
+    if (!next || next === item.name) {
+      onClose();
+      return;
+    }
+    onConfirm(next);
+    // Close immediately — caches already show the new name in onMutate.
+    onClose();
   };
 
   return (
@@ -54,7 +53,7 @@ export function RenameItemDialog({ item, onClose }: RenameItemDialogProps) {
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={!name.trim()}>
               Save
             </Button>
           </DialogFooter>

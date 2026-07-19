@@ -11,14 +11,24 @@ function getFileInput(container: HTMLElement): HTMLInputElement {
   return container.querySelector('input[type="file"]') as HTMLInputElement;
 }
 
+async function waitForContentsLoaded() {
+  expect(
+    await screen.findByRole("button", { name: /New (sub)?folder/i }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "Loading contents" })).toBeNull();
+}
+
 describe("DataRoomPage", () => {
-  it("shows the empty state at the root by default", async () => {
+  it("shows create affordances at the root after loading", async () => {
     renderDataRoomApp();
-    expect(await screen.findByText("This folder is empty.")).toBeInTheDocument();
+    await waitForContentsLoaded();
+    expect(screen.getByRole("button", { name: "New folder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New file" })).toBeInTheDocument();
   });
 
   it("creates a folder, navigates into it, and updates the breadcrumb", async () => {
     renderDataRoomApp();
+    await waitForContentsLoaded();
 
     fireEvent.click(screen.getByRole("button", { name: "New folder" }));
     fireEvent.change(await screen.findByLabelText("Name"), {
@@ -31,7 +41,6 @@ describe("DataRoomPage", () => {
 
     fireEvent.click(folderLink);
 
-    expect(await screen.findByText("This folder is empty.")).toBeInTheDocument();
     expect(
       await screen.findByRole("button", { name: "New subfolder of Contracts" }),
     ).toBeInTheDocument();
@@ -44,6 +53,7 @@ describe("DataRoomPage", () => {
 
   it("uploads a pdf and opens it in the preview dialog", async () => {
     const { container } = renderDataRoomApp();
+    await waitForContentsLoaded();
     const file = new File(["pdf-bytes"], "report.pdf", {
       type: "application/pdf",
     });
@@ -66,5 +76,13 @@ describe("DataRoomPage", () => {
       "src",
       expect.stringContaining("blob:"),
     );
+  });
+
+  it("shows a loading skeleton before folder contents resolve", async () => {
+    renderDataRoomApp();
+    expect(
+      screen.getByRole("status", { name: "Loading contents" }),
+    ).toBeInTheDocument();
+    await waitForContentsLoaded();
   });
 });

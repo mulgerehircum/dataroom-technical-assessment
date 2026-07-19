@@ -11,9 +11,56 @@ import {
 
 beforeEach(async () => {
   await resetFakeRepository();
+  vi.restoreAllMocks();
 });
 
-describe("optimistic delete rollback", () => {
+describe("optimistic delete", () => {
+  it("removes a file from the grid before deleteFile resolves", async () => {
+    await dataRoomRepository.createFile(
+      new File(["pdf"], "report.pdf", { type: "application/pdf" }),
+      null,
+    );
+    renderDataRoomApp();
+
+    await screen.findByRole("button", {
+      name: (accessibleName) =>
+        accessibleName.includes("report.pdf") &&
+        !accessibleName.startsWith("Actions"),
+    });
+
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const original = dataRoomRepository.deleteFile.bind(dataRoomRepository);
+    vi.spyOn(dataRoomRepository, "deleteFile").mockImplementation(async (id) => {
+      await gate;
+      return original(id);
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Actions for report.pdf" }),
+    );
+    fireEvent.click(await screen.findByRole("menuitem", { name: /delete/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", {
+          name: (accessibleName) =>
+            accessibleName.includes("report.pdf") &&
+            !accessibleName.startsWith("Actions"),
+        }),
+      ).toBeNull();
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+
+    release();
+    await waitFor(async () => {
+      expect(await dataRoomRepository.listChildren(null)).toHaveLength(0);
+    });
+  });
+
   it("restores a file in the grid when deleteFile fails", async () => {
     const errorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
     await dataRoomRepository.createFile(
@@ -38,8 +85,6 @@ describe("optimistic delete rollback", () => {
     await waitFor(() =>
       expect(errorSpy).toHaveBeenCalledWith("Delete failed"),
     );
-    // Dialog stays open on error (retry); dismiss so the grid is queryable again.
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(
       await screen.findByRole("button", {
@@ -66,7 +111,6 @@ describe("optimistic delete rollback", () => {
     await waitFor(() =>
       expect(errorSpy).toHaveBeenCalledWith("Delete failed"),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(
       await screen.findByRole("link", { name: /Contracts/i }),

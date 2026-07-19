@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -29,16 +28,14 @@ export function CreateFolderDialog({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    createFolder.mutate(
-      { name, parentId },
-      {
-        onSuccess: () => {
-          setName("");
-          onOpenChange(false);
-        },
-        onError: (error) => toast.error(error.message),
-      },
-    );
+    const folderName = name.trim();
+    if (!folderName) return;
+
+    createFolder.mutate({ name: folderName, parentId });
+    // Close immediately — the grid already shows an optimistic card.
+    // Errors toast from the mutation hook.
+    setName("");
+    onOpenChange(false);
   };
 
   return (
@@ -65,7 +62,7 @@ export function CreateFolderDialog({
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={createFolder.isPending}>
+            <Button type="submit" disabled={!name.trim()}>
               Create
             </Button>
           </DialogFooter>
