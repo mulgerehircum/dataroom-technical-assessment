@@ -14,7 +14,7 @@ export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
   return (
     <nav
       aria-label="breadcrumb"
-      className="flex flex-wrap items-center gap-1.5 border-b border-border bg-secondary/30 px-6 py-3"
+      className="flex min-h-14 flex-wrap items-center gap-1.5 border-b border-border bg-secondary/30 px-6 py-3"
     >
       {breadcrumbs.map((crumb, index) => {
         const isLast = index === breadcrumbs.length - 1;
