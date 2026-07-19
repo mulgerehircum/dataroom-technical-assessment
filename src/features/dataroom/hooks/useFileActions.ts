@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { dataRoomRepository } from "@/features/dataroom/storage/dataroom.repository";
 import { folderContentsQueryKey } from "@/features/dataroom/hooks/useFolderContents";
@@ -9,6 +10,7 @@ import type {
 
 export function useFileActions() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   const invalidateContents = () =>
     queryClient.invalidateQueries({ queryKey: ["dataroom", "folder-contents"] });
@@ -31,6 +33,7 @@ export function useFileActions() {
         type: "file",
         name: file.name,
         parentId,
+        ownerId: userId ?? "",
         mimeType: "application/pdf",
         size: file.size,
         blobUrl: "",

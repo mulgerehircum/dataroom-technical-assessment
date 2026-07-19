@@ -26,7 +26,7 @@ describe("DataRoomPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
-    const folderLink = await screen.findByRole("link", { name: "Contracts" });
+    const folderLink = await screen.findByRole("link", { name: /Contracts/i });
     expect(folderLink).toHaveAttribute("href", expect.stringMatching(/^\/folder\//));
 
     fireEvent.click(folderLink);
@@ -47,7 +47,11 @@ describe("DataRoomPage", () => {
 
     fireEvent.change(getFileInput(container), { target: { files: [file] } });
 
-    const fileButton = await screen.findByRole("button", { name: /report\.pdf/ });
+    const fileButton = await screen.findByRole("button", {
+      name: (accessibleName) =>
+        accessibleName.includes("report.pdf") &&
+        !accessibleName.startsWith("Actions"),
+    });
     fireEvent.click(fileButton);
 
     await waitFor(() => {

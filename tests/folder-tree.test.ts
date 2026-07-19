@@ -16,6 +16,8 @@ function folder(id: string, name: string, parentId: string | null): FolderEntity
     type: "folder",
     name,
     parentId,
+    ownerId: "user_test",
+    itemCount: 0,
     createdAt: 0,
     updatedAt: 0,
   };
@@ -27,9 +29,10 @@ function file(id: string, name: string, parentId: string | null): DataRoomItem {
     type: "file",
     name,
     parentId,
+    ownerId: "user_test",
     mimeType: "application/pdf",
     size: 100,
-    blob: new Blob(),
+    blobUrl: `blob:fake/${id}`,
     createdAt: 0,
     updatedAt: 0,
   };

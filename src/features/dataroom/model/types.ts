@@ -9,6 +9,10 @@ export interface FolderEntity {
   type: "folder";
   name: string;
   parentId: ItemId | null;
+  /** Clerk user id of the folder owner. */
+  ownerId: string;
+  /** Immediate child folders + files (not recursive). */
+  itemCount: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -20,6 +24,8 @@ export interface FileEntity {
   type: "file";
   name: string;
   parentId: ItemId | null;
+  /** Clerk user id of the file owner. */
+  ownerId: string;
   mimeType: SupportedFileMimeType;
   size: number;
   /** Public Vercel Blob URL — usable directly as an <iframe>/<a> src. */

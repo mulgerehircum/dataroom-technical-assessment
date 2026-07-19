@@ -13,6 +13,10 @@ interface FolderItemProps {
   onDelete: () => void;
 }
 
+function formatItemCount(count: number): string {
+  return count === 1 ? "1 item" : `${count} items`;
+}
+
 export function FolderItem({ folder, onRename, onDelete }: FolderItemProps) {
   return (
     <ContextMenu>
@@ -27,8 +31,13 @@ export function FolderItem({ folder, onRename, onDelete }: FolderItemProps) {
           >
             <span className="absolute -top-1.5 left-0 h-1.5 w-[18px] rounded-t-[3px] bg-folder-icon" />
           </span>
-          <span className="min-w-0 truncate text-sm font-bold tracking-wide uppercase">
-            {folder.name}
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold tracking-wide uppercase">
+              {folder.name}
+            </span>
+            <span className="mt-0.5 block text-xs text-text-tertiary">
+              {formatItemCount(folder.itemCount)}
+            </span>
           </span>
         </Link>
       </ContextMenuTrigger>

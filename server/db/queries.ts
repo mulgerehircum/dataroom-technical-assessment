@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql, type SQLWrapper } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql, type SQLWrapper } from "drizzle-orm";
 import type {
   DataRoomItem,
   FileEntity,
@@ -23,6 +23,59 @@ function sortItems(items: DataRoomItem[]): DataRoomItem[] {
   });
 }
 
+/** Immediate child folder+file counts keyed by parent folder id. */
+async function getChildCountsByParentIds(
+  parentIds: string[],
+  ownerId: string,
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  for (const id of parentIds) counts.set(id, 0);
+  if (parentIds.length === 0) return counts;
+
+  const db = getDb();
+  const [folderCounts, fileCounts] = await Promise.all([
+    db
+      .select({
+        parentId: folders.parentId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(folders)
+      .where(
+        and(eq(folders.ownerId, ownerId), inArray(folders.parentId, parentIds)),
+      )
+      .groupBy(folders.parentId),
+    db
+      .select({
+        parentId: files.parentId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(files)
+      .where(and(eq(files.ownerId, ownerId), inArray(files.parentId, parentIds)))
+      .groupBy(files.parentId),
+  ]);
+
+  for (const row of folderCounts) {
+    if (!row.parentId) continue;
+    counts.set(row.parentId, (counts.get(row.parentId) ?? 0) + Number(row.count));
+  }
+  for (const row of fileCounts) {
+    if (!row.parentId) continue;
+    counts.set(row.parentId, (counts.get(row.parentId) ?? 0) + Number(row.count));
+  }
+  return counts;
+}
+
+async function withItemCounts(
+  rows: (typeof folders.$inferSelect)[],
+  ownerId: string,
+): Promise<FolderEntity[]> {
+  const counts = await getChildCountsByParentIds(
+    rows.map((row) => row.id),
+    ownerId,
+  );
+  return rows.map((row) => toFolderEntity(row, counts.get(row.id) ?? 0));
+}
+
 export async function getFolderOwned(
   id: string,
   ownerId: string,
@@ -32,7 +85,9 @@ export async function getFolderOwned(
     .select()
     .from(folders)
     .where(and(eq(folders.id, id), eq(folders.ownerId, ownerId)));
-  return row ? toFolderEntity(row) : undefined;
+  if (!row) return undefined;
+  const [folder] = await withItemCounts([row], ownerId);
+  return folder;
 }
 
 export async function getFileOwned(
@@ -62,7 +117,8 @@ export async function listChildren(
       .from(files)
       .where(and(eq(files.ownerId, ownerId), parentFilter(files.parentId, parentId))),
   ]);
-  return sortItems([...folderRows.map(toFolderEntity), ...fileRows.map(toFileEntity)]);
+  const mappedFolders = await withItemCounts(folderRows, ownerId);
+  return sortItems([...mappedFolders, ...fileRows.map(toFileEntity)]);
 }
 
 export async function getSiblingNames(
@@ -96,7 +152,7 @@ export async function createFolderRow(
     .insert(folders)
     .values({ name, parentId, ownerId })
     .returning();
-  return toFolderEntity(row);
+  return toFolderEntity(row, 0);
 }
 
 export async function renameFolderRow(id: string, name: string): Promise<FolderEntity> {
@@ -106,7 +162,8 @@ export async function renameFolderRow(id: string, name: string): Promise<FolderE
     .set({ name, updatedAt: new Date() })
     .where(eq(folders.id, id))
     .returning();
-  return toFolderEntity(row);
+  const counts = await getChildCountsByParentIds([id], row.ownerId);
+  return toFolderEntity(row, counts.get(id) ?? 0);
 }
 
 export async function deleteFolderRow(id: string): Promise<void> {
@@ -153,14 +210,18 @@ export async function getBreadcrumbChain(
     id: string;
     name: string;
     parent_id: string | null;
+    owner_id: string;
     created_at: string | Date;
     updated_at: string | Date;
   }[];
+  // Breadcrumbs only need identity/name; skip the extra count round-trip.
   return rows.map((row) => ({
     id: row.id,
     type: "folder" as const,
     name: row.name,
     parentId: row.parent_id,
+    ownerId: row.owner_id,
+    itemCount: 0,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
   }));
@@ -211,5 +272,6 @@ export async function searchItems(
       .from(files)
       .where(and(eq(files.ownerId, ownerId), sql`${files.name} ILIKE ${pattern}`)),
   ]);
-  return sortItems([...folderRows.map(toFolderEntity), ...fileRows.map(toFileEntity)]);
+  const mappedFolders = await withItemCounts(folderRows, ownerId);
+  return sortItems([...mappedFolders, ...fileRows.map(toFileEntity)]);
 }

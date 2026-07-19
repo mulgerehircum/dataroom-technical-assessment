@@ -23,5 +23,17 @@ vi.mock("@clerk/clerk-react", () => ({
   SignedOut: () => null,
   SignInButton: ({ children }: { children: unknown }) => children,
   UserButton: () => null,
-  useAuth: () => ({ getToken: async () => "test-token" }),
+  useAuth: () => ({
+    getToken: async () => "test-token",
+    userId: "user_test",
+    isLoaded: true,
+  }),
+  useUser: () => ({
+    user: {
+      id: "user_test",
+      fullName: "Test User",
+      imageUrl: undefined,
+      primaryEmailAddress: { emailAddress: "test@example.com" },
+    },
+  }),
 }));

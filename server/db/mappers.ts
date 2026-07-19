@@ -4,12 +4,17 @@ import type {
 } from "../../src/features/dataroom/model/types.js";
 import type { files, folders } from "./schema.js";
 
-export function toFolderEntity(row: typeof folders.$inferSelect): FolderEntity {
+export function toFolderEntity(
+  row: typeof folders.$inferSelect,
+  itemCount = 0,
+): FolderEntity {
   return {
     id: row.id,
     type: "folder",
     name: row.name,
     parentId: row.parentId,
+    ownerId: row.ownerId,
+    itemCount,
     createdAt: row.createdAt.getTime(),
     updatedAt: row.updatedAt.getTime(),
   };
@@ -21,6 +26,7 @@ export function toFileEntity(row: typeof files.$inferSelect): FileEntity {
     type: "file",
     name: row.name,
     parentId: row.parentId,
+    ownerId: row.ownerId,
     mimeType: row.mimeType as FileEntity["mimeType"],
     size: row.size,
     blobUrl: row.blobUrl,

@@ -1,4 +1,5 @@
 import { Loader2, MoreHorizontal } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -31,13 +32,34 @@ function formatModifiedDate(timestamp: number): string {
   });
 }
 
+function ownerInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
+function ownerShortName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Owner";
+  if (parts.length === 1) return parts[0];
+  return `${parts[0][0] ?? ""}. ${parts[parts.length - 1]}`;
+}
+
 export function FileItem({ file, onOpen, onRename, onDelete }: FileItemProps) {
+  const { user } = useUser();
   const isUploading = Boolean(file.isUploading);
+
+  const isCurrentUserOwner = Boolean(user?.id && user.id === file.ownerId);
+  const ownerName = isCurrentUserOwner
+    ? (user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "You")
+    : "Owner";
+  const ownerImageUrl = isCurrentUserOwner ? user?.imageUrl : undefined;
 
   const row = (
     <div
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_2.5rem] items-center gap-3 px-3 py-3 transition-colors hover:bg-accent",
+        "grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem] items-center gap-3 px-3 py-3 transition-colors hover:bg-accent",
         isUploading && "pointer-events-none opacity-70",
       )}
     >
@@ -66,6 +88,23 @@ export function FileItem({ file, onOpen, onRename, onDelete }: FileItemProps) {
 
       <span className="text-[12.5px] text-muted-foreground">
         {isUploading ? "Uploading…" : formatModifiedDate(file.updatedAt)}
+      </span>
+
+      <span className="flex min-w-0 items-center gap-2">
+        {ownerImageUrl ? (
+          <img
+            src={ownerImageUrl}
+            alt=""
+            className="size-6 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-extrabold text-secondary-foreground">
+            {ownerInitials(ownerName)}
+          </span>
+        )}
+        <span className="truncate text-[12.5px] text-muted-foreground">
+          {ownerShortName(ownerName)}
+        </span>
       </span>
 
       {isUploading ? (

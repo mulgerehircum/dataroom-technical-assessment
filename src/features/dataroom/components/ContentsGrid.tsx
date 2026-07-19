@@ -45,10 +45,11 @@ export function ContentsGrid({
 
       {files.length > 0 && (
         <section className="flex flex-col">
-          <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_2.5rem] gap-3 border-b border-border px-3 pb-2 text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase">
+          <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem] gap-3 border-b border-border px-3 pb-2 text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase">
             <span>Name</span>
             <span>Size</span>
             <span>Modified</span>
+            <span>Owner</span>
             <span className="sr-only">Actions</span>
           </div>
           <ul className="divide-y divide-border">

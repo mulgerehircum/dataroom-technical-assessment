@@ -9,6 +9,8 @@ import type { DataRoomItem, FileEntity, FolderEntity, ItemId } from "@/features/
  * of hitting the real API. Conceptually the same role fake-indexeddb used to
  * play, just hand-rolled since there's no local DB to polyfill anymore.
  */
+const FAKE_OWNER_ID = "user_test";
+
 let folders: FolderEntity[] = [];
 let files: FileEntity[] = [];
 
@@ -45,13 +47,29 @@ function getDescendantIds(folderId: ItemId): ItemId[] {
   return descendants;
 }
 
+function itemCountFor(folderId: ItemId): number {
+  return [...folders, ...files].filter((item) => item.parentId === folderId).length;
+}
+
+function withLiveItemCounts(items: DataRoomItem[]): DataRoomItem[] {
+  return items.map((item) =>
+    item.type === "folder" ? { ...item, itemCount: itemCountFor(item.id) } : item,
+  );
+}
+
 export const fakeDataRoomRepository: DataRoomRepository = {
   async listChildren(parentId) {
-    return sortItems([...folders, ...files].filter((item) => item.parentId === parentId));
+    return sortItems(
+      withLiveItemCounts(
+        [...folders, ...files].filter((item) => item.parentId === parentId),
+      ),
+    );
   },
 
   async getFolder(id) {
-    return folders.find((folder) => folder.id === id);
+    const folder = folders.find((candidate) => candidate.id === id);
+    if (!folder) return undefined;
+    return { ...folder, itemCount: itemCountFor(id) };
   },
 
   async createFolder(name, parentId) {
@@ -65,6 +83,8 @@ export const fakeDataRoomRepository: DataRoomRepository = {
       type: "folder",
       name: dedupeName(trimmed, siblingNames(parentId)),
       parentId,
+      ownerId: FAKE_OWNER_ID,
+      itemCount: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -99,6 +119,7 @@ export const fakeDataRoomRepository: DataRoomRepository = {
       type: "file",
       name: dedupeName(file.name.trim(), siblingNames(parentId)),
       parentId,
+      ownerId: FAKE_OWNER_ID,
       mimeType: "application/pdf",
       size: file.size,
       blobUrl: `blob:fake/${generateId()}`,
@@ -127,7 +148,11 @@ export const fakeDataRoomRepository: DataRoomRepository = {
   async search(query) {
     const needle = query.toLowerCase();
     return sortItems(
-      [...folders, ...files].filter((item) => item.name.toLowerCase().includes(needle)),
+      withLiveItemCounts(
+        [...folders, ...files].filter((item) =>
+          item.name.toLowerCase().includes(needle),
+        ),
+      ),
     );
   },
 };
