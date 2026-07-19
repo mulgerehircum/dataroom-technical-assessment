@@ -5,10 +5,10 @@ import type { ItemId } from "@/features/dataroom/model/types";
 export function useFolderActions() {
   const queryClient = useQueryClient();
 
+  // Broad "dataroom" prefix so both folder-contents and breadcrumb queries
+  // (which embed a renamed ancestor's name) refresh together.
   const invalidateContents = () =>
-    queryClient.invalidateQueries({
-      queryKey: ["dataroom", "folder-contents"],
-    });
+    queryClient.invalidateQueries({ queryKey: ["dataroom"] });
 
   const createFolder = useMutation({
     mutationFn: ({

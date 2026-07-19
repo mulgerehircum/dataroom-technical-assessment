@@ -6,9 +6,7 @@ export function useFileActions() {
   const queryClient = useQueryClient();
 
   const invalidateContents = () =>
-    queryClient.invalidateQueries({
-      queryKey: ["dataroom", "folder-contents"],
-    });
+    queryClient.invalidateQueries({ queryKey: ["dataroom", "folder-contents"] });
 
   const uploadFile = useMutation({
     mutationFn: ({

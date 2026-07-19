@@ -6,7 +6,9 @@ A browser-only virtual data room: nested folders, PDF uploads, and CRUD on both,
 
 - Vite + React 18 + TypeScript, React Router, TanStack Query
 - Tailwind v4 + shadcn/ui (`base-nova` style, base-ui/react primitives) for UI
-- `idb` (IndexedDB wrapper) for storage, Vitest for unit tests
+- `idb` (IndexedDB wrapper) for storage
+- Vitest + Testing Library for tests (`fake-indexeddb` polyfills IndexedDB in Node; component tests
+  run under `jsdom` via a per-file `// @vitest-environment jsdom` pragma)
 
 ## Getting started
 
@@ -59,22 +61,27 @@ for tests) without touching components or hooks.
 
 ## Status
 
-This is a structural scaffold, not a finished feature. Real, tested code:
+All four CRUD flows (create/view/rename/delete, for both folders and files) work end to end and are
+tested — storage, hooks, and UI.
 
-- `model/*`, `utils/folder-tree.ts`, `utils/file-name.ts`, `utils/format-file-size.ts` (covered by
-  `tests/folder-tree.test.ts`, `tests/file-name.test.ts`)
-- `storage/db.ts` — the actual IndexedDB schema (stores, indexes, upgrade path)
-- App shell (`app/*`, `main.tsx`), routing, providers, and the hooks-to-repository wiring
+- `model/*`, `utils/folder-tree.ts`, `utils/file-name.ts`, `utils/format-file-size.ts` — pure logic,
+  covered by `tests/folder-tree.test.ts`, `tests/file-name.test.ts`
+- `storage/db.ts` + `storage/indexeddb.repository.ts` — full CRUD against IndexedDB, including
+  cascade-delete and name-collision handling via `dedupeName`, covered by
+  `tests/indexeddb.repository.test.ts` (run against `fake-indexeddb`)
+- `dialogs/*`, `components/UploadDropzone.tsx`, `components/FilePreview.tsx`,
+  `components/Breadcrumbs.tsx` — real forms and interactions wired to `useFolderActions` /
+  `useFileActions` / `useBreadcrumbs`, covered by component tests
+  (`tests/CreateFolderDialog.test.tsx`, `tests/RenameItemDialog.test.tsx`,
+  `tests/DeleteItemDialog.test.tsx`, `tests/UploadDropzone.test.tsx`, `tests/Breadcrumbs.test.tsx`)
+- `tests/DataRoomPage.test.tsx` — integration test through the real route table: create a folder,
+  navigate into it, confirm the breadcrumb updates, upload a PDF, open it in the preview dialog
 
-Stubbed for a follow-up pass (each throws / renders a placeholder with a `TODO` comment at the call
-site):
+Known gaps / next pass:
 
-- `storage/indexeddb.repository.ts` — CRUD methods against the schema in `db.ts`
-- Dialogs (`CreateFolderDialog`, `RenameItemDialog`, `DeleteItemDialog`) — currently render empty
-  shells with no form
-- `UploadDropzone`, `FilePreview` — no drag-drop or PDF rendering yet
-- `DataRoomHeader`, `Breadcrumbs` — no actions or live breadcrumb trail yet
-
-None of the four CRUD flows (create/view/rename/delete for folders and files) are functionally
-wired end-to-end yet; `useFolderContents` / `useFolderActions` / `useFileActions` already call the
-repository contract, so completing `indexeddb.repository.ts` is what unblocks all of them at once.
+- Rename/delete are only reachable via each item's right-click context menu (no dedicated affordance
+  for keyboard/touch users)
+- No loading/error UI beyond `sonner` toasts on mutation failure — e.g. no skeleton while a folder's
+  contents are loading
+- `FilePreview` renders the PDF via a plain `<iframe>` — fine for modern browsers, no fallback for
+  browsers that don't render PDFs inline
