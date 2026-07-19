@@ -36,13 +36,14 @@ export function DataRoomPage() {
         folderId={folderId}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
-        onCreateFolder={() => setIsCreateFolderOpen(true)}
       />
       {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
         <ContentsGrid
           items={isSearching ? searchResults : items}
+          folderId={folderId}
+          onCreateFolder={() => setIsCreateFolderOpen(true)}
           onRename={setRenameTarget}
           onDelete={setDeleteTarget}
           onPreviewFile={setPreviewFile}

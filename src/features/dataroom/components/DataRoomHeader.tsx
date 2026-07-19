@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { FolderPlus, Search, Upload } from "lucide-react";
+import { Search, Upload } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,14 +11,12 @@ interface DataRoomHeaderProps {
   folderId: ItemId | null;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
-  onCreateFolder: () => void;
 }
 
 export function DataRoomHeader({
   folderId,
   searchQuery,
   onSearchQueryChange,
-  onCreateFolder,
 }: DataRoomHeaderProps) {
   const { uploadFiles, conflictDialog } = useUploadFiles(folderId);
   const { data: breadcrumbs = [] } = useBreadcrumbs(folderId);
@@ -49,20 +47,11 @@ export function DataRoomHeader({
         <div className="flex shrink-0 items-center gap-2">
           <Button
             size="sm"
-            variant="outline"
             onClick={() => inputRef.current?.click()}
             className="rounded-lg px-4 font-bold tracking-[0.02em] uppercase"
           >
             <Upload />
             Upload
-          </Button>
-          <Button
-            size="sm"
-            onClick={onCreateFolder}
-            className="rounded-lg px-4 font-bold tracking-[0.02em] uppercase"
-          >
-            <FolderPlus />
-            New folder
           </Button>
           <UserButton afterSignOutUrl="/" />
         </div>

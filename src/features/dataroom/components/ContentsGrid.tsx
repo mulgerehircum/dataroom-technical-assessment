@@ -1,49 +1,105 @@
-import type { DataRoomItem, FileEntity } from "@/features/dataroom/model/types";
+import { FolderPlus } from "lucide-react";
+import type { DataRoomItem, FileEntity, ItemId } from "@/features/dataroom/model/types";
 import { FolderItem } from "@/features/dataroom/components/FolderItem";
 import { FileItem } from "@/features/dataroom/components/FileItem";
 import { EmptyState } from "@/features/dataroom/components/EmptyState";
+import { useBreadcrumbs } from "@/features/dataroom/hooks/useBreadcrumbs";
 
 interface ContentsGridProps {
   items: DataRoomItem[];
+  folderId: ItemId | null;
+  onCreateFolder: () => void;
   onRename: (item: DataRoomItem) => void;
   onDelete: (item: DataRoomItem) => void;
   onPreviewFile: (file: FileEntity) => void;
 }
 
+function NewFolderTile({
+  folderId,
+  parentFolderName,
+  onClick,
+}: {
+  folderId: ItemId | null;
+  parentFolderName: string | null;
+  onClick: () => void;
+}) {
+  const isSubfolder = folderId !== null;
+  const title = isSubfolder ? "New subfolder" : "New folder";
+  const subtitle = isSubfolder
+    ? parentFolderName
+      ? `of ${parentFolderName}`
+      : "Create"
+    : "Create";
+  const label = isSubfolder
+    ? parentFolderName
+      ? `New subfolder of ${parentFolderName}`
+      : "New subfolder"
+    : "New folder";
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="flex items-center gap-3.5 rounded-[10px] border border-dashed border-border bg-transparent px-[18px] py-[18px] text-left text-muted-foreground transition-colors hover:border-primary hover:bg-accent hover:text-foreground"
+    >
+      <span
+        className="flex size-8 shrink-0 items-center justify-center rounded-[4px_8px_4px_4px] border border-dashed border-current"
+        aria-hidden
+      >
+        <FolderPlus className="size-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-bold tracking-wide uppercase">
+          {title}
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-text-tertiary">
+          {subtitle}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function ContentsGrid({
   items,
+  folderId,
+  onCreateFolder,
   onRename,
   onDelete,
   onPreviewFile,
 }: ContentsGridProps) {
-  if (items.length === 0) {
-    return <EmptyState />;
-  }
+  const { data: breadcrumbs = [] } = useBreadcrumbs(folderId);
+  const parentFolderName =
+    folderId === null ? null : (breadcrumbs.at(-1)?.name ?? null);
 
   const folders = items.filter((item) => item.type === "folder");
   const files = items.filter((item) => item.type === "file");
 
   return (
     <div className="flex flex-col gap-8">
-      {folders.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase">
-            Folders
-          </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {folders.map((folder) => (
-              <FolderItem
-                key={folder.id}
-                folder={folder}
-                onRename={() => onRename(folder)}
-                onDelete={() => onDelete(folder)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase">
+          Folders
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {folders.map((folder) => (
+            <FolderItem
+              key={folder.id}
+              folder={folder}
+              onRename={() => onRename(folder)}
+              onDelete={() => onDelete(folder)}
+            />
+          ))}
+          <NewFolderTile
+            folderId={folderId}
+            parentFolderName={parentFolderName}
+            onClick={onCreateFolder}
+          />
+        </div>
+      </section>
 
-      {files.length > 0 && (
+      {files.length > 0 ? (
         <section className="flex flex-col">
           <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_8rem_2.5rem] gap-3 border-b border-border px-3 pb-2 text-[11px] font-bold tracking-[0.06em] text-text-tertiary uppercase">
             <span>Name</span>
@@ -65,6 +121,8 @@ export function ContentsGrid({
             ))}
           </ul>
         </section>
+      ) : (
+        folders.length === 0 && <EmptyState folderId={folderId} />
       )}
     </div>
   );

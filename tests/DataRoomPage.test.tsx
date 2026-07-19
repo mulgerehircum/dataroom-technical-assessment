@@ -32,6 +32,9 @@ describe("DataRoomPage", () => {
     fireEvent.click(folderLink);
 
     expect(await screen.findByText("This folder is empty.")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "New subfolder of Contracts" }),
+    ).toBeInTheDocument();
     // Two "Contracts": the breadcrumb link and (previously) the grid card,
     // now only the breadcrumb text remains since we navigated inside it.
     const nav = screen.getByRole("navigation");
