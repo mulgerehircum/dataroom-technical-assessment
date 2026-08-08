@@ -28,6 +28,11 @@ const authorizedParties = [
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : undefined,
   "https://tailored-tech-fullstack-technical.vercel.app",
+  // Vercel project was renamed to "dataroom-technical-assessment", but the
+  // production alias domain stayed on the old name — this is the actual
+  // in-use domain, and VERCEL_URL/VERCEL_PROJECT_PRODUCTION_URL both still
+  // resolve to the old one, so it needs to be listed explicitly too.
+  "https://dataroom-technical-assessment.vercel.app",
   // Local Vite (`npm run dev`) and vercel/dev defaults
   "http://localhost:5173",
   "http://127.0.0.1:5173",
