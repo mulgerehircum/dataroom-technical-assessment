@@ -17,13 +17,20 @@ import { useFileActions } from "@/features/dataroom/hooks/useFileActions";
 import { useFolderActions } from "@/features/dataroom/hooks/useFolderActions";
 import { useSearch } from "@/features/dataroom/hooks/useSearch";
 import { useSearchHistory } from "@/features/dataroom/hooks/useSearchHistory";
+import { dataRoomFolderPath, dataRoomRootPath } from "@/features/dataroom/utils/routes";
 import type {
   DataRoomItem,
   FileEntity,
   ItemId,
 } from "@/features/dataroom/model/types";
 
-export function DataRoomPage() {
+interface DataRoomPageProps {
+  /** Public read/write demo with no Clerk session behind it. */
+  isDemo?: boolean;
+}
+
+export function DataRoomPage({ isDemo = false }: DataRoomPageProps) {
+  const basePath = isDemo ? "/demo" : "";
   const params = useParams<{ folderId?: string }>();
   const folderId: ItemId | null = params.folderId ?? null;
   const navigate = useNavigate();
@@ -70,8 +77,8 @@ export function DataRoomPage() {
   useEffect(() => {
     if (!folderMissing) return;
     toast.error("This folder no longer exists.");
-    navigate("/", { replace: true });
-  }, [folderMissing, navigate]);
+    navigate(dataRoomRootPath(basePath), { replace: true });
+  }, [folderMissing, navigate, basePath]);
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
@@ -91,7 +98,7 @@ export function DataRoomPage() {
 
   const showInFolder = (parentId: ItemId | null) => {
     clearSearch();
-    navigate(parentId === null ? "/" : `/folder/${parentId}`);
+    navigate(parentId === null ? dataRoomRootPath(basePath) : dataRoomFolderPath(basePath, parentId));
   };
 
   if (folderMissing) {
@@ -136,6 +143,7 @@ export function DataRoomPage() {
         items={isSearching ? searchResults : items}
         folderId={folderId}
         isSearching={isSearching}
+        basePath={basePath}
         onCreateFolder={() => setIsCreateFolderOpen(true)}
         onRename={setRenameTarget}
         onDelete={setDeleteTarget}
@@ -157,8 +165,9 @@ export function DataRoomPage() {
         onRemoveSearchHistory={searchHistory.remove}
         onClearSearchHistory={searchHistory.clear}
         uploadDisabled={isSearching}
+        isDemo={isDemo}
       />
-      {!isSearching && <Breadcrumbs currentFolderId={folderId} />}
+      {!isSearching && <Breadcrumbs currentFolderId={folderId} basePath={basePath} />}
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
         {mainContent}

@@ -39,5 +39,28 @@ export interface DataRoomRepository {
   search(query: string): Promise<DataRoomItem[]>;
 }
 
-/** Swap implementations here (e.g. an in-memory fake for tests) without touching call sites. */
-export const dataRoomRepository: DataRoomRepository = apiRepository;
+let activeRepository: DataRoomRepository = apiRepository;
+
+/**
+ * Swaps the live implementation (e.g. the read-only demo repository for
+ * `/demo`). Call synchronously during render — never in an effect — so
+ * queries that mount in the same commit see the right implementation.
+ */
+export function setDataRoomRepository(repository: DataRoomRepository): void {
+  activeRepository = repository;
+}
+
+/** Stable object whose methods delegate to whichever implementation is currently active. */
+export const dataRoomRepository: DataRoomRepository = {
+  getFolderView: (folderId) => activeRepository.getFolderView(folderId),
+  listChildren: (parentId) => activeRepository.listChildren(parentId),
+  getFolder: (id) => activeRepository.getFolder(id),
+  createFolder: (name, parentId) => activeRepository.createFolder(name, parentId),
+  renameFolder: (id, name) => activeRepository.renameFolder(id, name),
+  deleteFolder: (id) => activeRepository.deleteFolder(id),
+  createFile: (file, parentId, options) =>
+    activeRepository.createFile(file, parentId, options),
+  renameFile: (id, name) => activeRepository.renameFile(id, name),
+  deleteFile: (id) => activeRepository.deleteFile(id),
+  search: (query) => activeRepository.search(query),
+};

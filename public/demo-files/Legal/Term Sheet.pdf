@@ -1,0 +1,44 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /MediaBox [0 0 612 792] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 561 >>
+stream
+BT /F1 20 Tf 72 700 Td (Series A Term Sheet \(Sample\)) Tj ET
+BT /F2 11 Tf 72 666 Td (Issuer: Acme Corp) Tj ET
+BT /F2 11 Tf 72 648 Td (Round: Series A Preferred Stock) Tj ET
+BT /F2 11 Tf 72 630 Td (Amount: $8,000,000) Tj ET
+BT /F2 11 Tf 72 612 Td (Pre-Money Valuation: $32,000,000) Tj ET
+BT /F2 11 Tf 72 594 Td (Liquidation Preference: 1x non-participating) Tj ET
+BT /F2 11 Tf 72 576 Td (Board Composition: 2 Investor, 2 Founder, 1 Independent) Tj ET
+BT /F2 11 Tf 72 558 Td () Tj ET
+BT /F2 11 Tf 72 540 Td (\(Placeholder terms  for demo purposes only.\)) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000863 00000 n 
+0000000938 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1008
+%%EOF

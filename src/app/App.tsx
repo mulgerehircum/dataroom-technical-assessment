@@ -1,7 +1,7 @@
 import { useAuth, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { RouterProvider } from "react-router-dom";
 import { AppProviders } from "@/app/providers";
-import { router } from "@/app/router";
+import { router, demoRouter } from "@/app/router";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContentsSkeleton } from "@/features/dataroom/components/ContentsSkeleton";
@@ -65,11 +65,35 @@ function SignInPrompt() {
           Sign in
         </Button>
       </SignInButton>
+      <a
+        href="/demo"
+        className="text-[13.5px] font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
+      >
+        Or view a live demo — no sign in required
+      </a>
     </div>
   );
 }
 
+/** Read/write demo seeded with sample folders and PDFs, no Clerk session involved. */
+function DemoApp() {
+  return <RouterProvider router={demoRouter} />;
+}
+
 export function App() {
+  // A plain pathname check (not a route match) so /demo works whether or
+  // not the visitor is signed in — it never goes through the Clerk gate.
+  const isDemoRoute =
+    typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
+
+  if (isDemoRoute) {
+    return (
+      <AppProviders>
+        <DemoApp />
+      </AppProviders>
+    );
+  }
+
   return (
     <AppProviders>
       <SignedIn>

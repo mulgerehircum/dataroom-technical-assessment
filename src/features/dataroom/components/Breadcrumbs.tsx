@@ -1,14 +1,16 @@
 import { Link } from "react-router-dom";
 import { Fragment } from "react";
 import { useBreadcrumbs } from "@/features/dataroom/hooks/useBreadcrumbs";
+import { dataRoomFolderPath, dataRoomRootPath } from "@/features/dataroom/utils/routes";
 import type { ItemId } from "@/features/dataroom/model/types";
 import { cn } from "@/lib/utils";
 
 interface BreadcrumbsProps {
   currentFolderId: ItemId | null;
+  basePath?: string;
 }
 
-export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
+export function Breadcrumbs({ currentFolderId, basePath = "" }: BreadcrumbsProps) {
   const { data } = useBreadcrumbs(currentFolderId);
   const breadcrumbs = data?.entries ?? [];
 
@@ -39,7 +41,7 @@ export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
             {/* Root stays a link even when it's the only crumb (missing folder). */}
             {isRoot ? (
               <Link
-                to="/"
+                to={dataRoomRootPath(basePath)}
                 aria-current={isLast ? "page" : undefined}
                 className={chipClass}
               >
@@ -50,7 +52,7 @@ export function Breadcrumbs({ currentFolderId }: BreadcrumbsProps) {
                 {crumb.name}
               </span>
             ) : (
-              <Link to={`/folder/${crumb.id}`} className={chipClass}>
+              <Link to={dataRoomFolderPath(basePath, crumb.id as ItemId)} className={chipClass}>
                 {crumb.name}
               </Link>
             )}

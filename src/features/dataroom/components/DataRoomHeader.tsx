@@ -18,6 +18,8 @@ interface DataRoomHeaderProps {
   onClearSearchHistory: () => void;
   /** Hide/disable upload while search results are showing. */
   uploadDisabled?: boolean;
+  /** Public read/write demo with no Clerk session — swaps the account menu for a sign-in link. */
+  isDemo?: boolean;
 }
 
 export function DataRoomHeader({
@@ -29,6 +31,7 @@ export function DataRoomHeader({
   onRemoveSearchHistory,
   onClearSearchHistory,
   uploadDisabled = false,
+  isDemo = false,
 }: DataRoomHeaderProps) {
   const { uploadFiles, conflictDialog } = useUploadFiles(folderId);
   const { data } = useBreadcrumbs(folderId);
@@ -52,8 +55,13 @@ export function DataRoomHeader({
     <>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-6">
         <div className="min-w-0">
-          <p className="text-[12px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+          <p className="flex items-center gap-2 text-[12px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
             Acme Data Room
+            {isDemo && (
+              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold tracking-[0.04em] text-primary normal-case">
+                Live demo
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-1.5">
             <h1 className="truncate text-2xl font-extrabold tracking-tight">
@@ -169,7 +177,16 @@ export function DataRoomHeader({
               Upload
             </Button>
           )}
-          <UserButton afterSignOutUrl="/" />
+          {isDemo ? (
+            <a
+              href="/"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold tracking-[0.02em] text-muted-foreground uppercase hover:text-foreground"
+            >
+              Sign in
+            </a>
+          ) : (
+            <UserButton afterSignOutUrl="/" />
+          )}
         </div>
         <input
           ref={inputRef}

@@ -10,6 +10,7 @@ interface ContentsGridProps {
   items: DataRoomItem[];
   folderId: ItemId | null;
   isSearching?: boolean;
+  basePath?: string;
   onCreateFolder: () => void;
   onRename: (item: DataRoomItem) => void;
   onDelete: (item: DataRoomItem) => void;
@@ -115,6 +116,7 @@ export function ContentsGrid({
   items,
   folderId,
   isSearching = false,
+  basePath = "",
   onCreateFolder,
   onRename,
   onDelete,
@@ -144,6 +146,7 @@ export function ContentsGrid({
               <FolderItem
                 key={folder.id}
                 folder={folder}
+                basePath={basePath}
                 onRename={() => onRename(folder)}
                 onDelete={() => onDelete(folder)}
                 onOpen={onOpenFolder}

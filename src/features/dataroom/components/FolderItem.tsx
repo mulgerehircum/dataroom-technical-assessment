@@ -13,11 +13,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { dataRoomFolderPath } from "@/features/dataroom/utils/routes";
 import type { FolderEntity } from "@/features/dataroom/model/types";
 import { cn } from "@/lib/utils";
 
 interface FolderItemProps {
   folder: FolderEntity;
+  basePath?: string;
   onRename: () => void;
   onDelete: () => void;
   /** Called when the user opens the folder (e.g. clear search). */
@@ -28,7 +30,7 @@ function formatItemCount(count: number): string {
   return count === 1 ? "1 item" : `${count} items`;
 }
 
-export function FolderItem({ folder, onRename, onDelete, onOpen }: FolderItemProps) {
+export function FolderItem({ folder, basePath = "", onRename, onDelete, onOpen }: FolderItemProps) {
   const isCreating = Boolean(folder.isCreating);
 
   const body = (
@@ -64,7 +66,7 @@ export function FolderItem({ folder, onRename, onDelete, onOpen }: FolderItemPro
         </div>
       ) : (
         <Link
-          to={`/folder/${folder.id}`}
+          to={dataRoomFolderPath(basePath, folder.id)}
           onClick={onOpen}
           className="flex min-w-0 flex-1 items-center gap-3.5 px-[18px] py-[18px]"
         >
